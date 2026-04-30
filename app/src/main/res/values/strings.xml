@@ -5,4 +5,6 @@
     <string name="about_website">About Website</string>
     <string name="buy_me_a_coffee">Buy me a coffee</string>
     <string name="buymeacoffee_url" translatable="false">https://buymeacoffee.com/charleshartmann</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="privacy_policy_url" translatable="false">https://chartmann1590.github.io/Flashlight/privacy.html</string>
 </resources>

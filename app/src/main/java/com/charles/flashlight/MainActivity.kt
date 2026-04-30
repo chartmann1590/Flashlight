@@ -84,6 +84,19 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Text(getString(R.string.buy_me_a_coffee))
                     }
+                    Button(
+                        modifier = Modifier.testTag("e2e_privacy_policy"),
+                        onClick = {
+                            startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse(getString(R.string.privacy_policy_url))
+                                )
+                            )
+                        }
+                    ) {
+                        Text(getString(R.string.privacy_policy))
+                    }
                 }
             }
         }

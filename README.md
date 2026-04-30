@@ -22,6 +22,8 @@ Use the **APK** to install directly on your device. Use the **AAB** if you publi
 **Marketing site:** [https://chartmann1590.github.io/Flashlight/](https://chartmann1590.github.io/Flashlight/)  
 Same content you can open from the app’s “About Website” button—screenshots, download buttons, and support link.
 
+**Privacy policy:** [https://chartmann1590.github.io/Flashlight/privacy.html](https://chartmann1590.github.io/Flashlight/privacy.html)
+
 ---
 
 ## Developers

@@ -40,6 +40,13 @@
       border-bottom: 1px solid var(--border);
       backdrop-filter: blur(6px);
     }
+    .nav-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
     .brand {
       display: flex;
       align-items: center;
@@ -47,6 +54,13 @@
       font-weight: 800;
       letter-spacing: .2px;
     }
+    .site-nav a {
+      color: var(--gold-soft);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .site-nav a:hover { text-decoration: underline; }
     .dot {
       width: 10px; height: 10px; border-radius: 999px;
       background: linear-gradient(135deg, var(--gold), var(--gold-soft));
@@ -231,9 +245,14 @@
 </head>
 <body>
   <header>
-    <div class="wrap brand">
-      <span class="dot"></span>
-      <span>Flashlight</span>
+    <div class="wrap nav-row">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>Flashlight</span>
+      </div>
+      <nav class="site-nav">
+        <a href="privacy.html">Privacy Policy</a>
+      </nav>
     </div>
   </header>
 
@@ -307,6 +326,7 @@
   <footer>
     <div class="wrap">
       Flashlight for Android • <a href="https://github.com/chartmann1590/Flashlight/releases/latest" style="color:var(--gold-soft);">Get the app</a>
+      • <a href="privacy.html" style="color:var(--gold-soft);">Privacy Policy</a>
       • <a href="https://buymeacoffee.com/charleshartmann" style="color:var(--gold-soft);">Buy me a coffee</a>
     </div>
   </footer>
