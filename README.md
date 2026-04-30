@@ -7,6 +7,11 @@ Modern Android flashlight app (Kotlin + Compose) with Firebase telemetry, AdMob 
 - Live site: https://chartmann1590.github.io/Flashlight/
 - In-app link: `About Website` button in `MainActivity`
 
+## Support the developer
+
+- **Buy Me a Coffee:** https://buymeacoffee.com/charleshartmann  
+- Also linked from the app (main screen) and the GitHub Pages site.
+
 ## Workflow Status
 
 [![Android Signed Release](https://github.com/chartmann1590/Flashlight/actions/workflows/android-release.yml/badge.svg)](https://github.com/chartmann1590/Flashlight/actions/workflows/android-release.yml)

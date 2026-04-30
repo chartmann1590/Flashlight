@@ -6,6 +6,7 @@ test("website renders screenshots and release CTA", async ({ page }) => {
   await expect(page).toHaveTitle(/Flashlight/);
   await expect(page.getByRole("link", { name: /Download signed APK/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /View Source on GitHub/i })).toBeVisible();
+  await expect(page.locator('a[href="https://buymeacoffee.com/charleshartmann"]')).toHaveCount(2);
 
   const screenshots = [
     page.locator('img[alt="Flashlight home screen"]'),
