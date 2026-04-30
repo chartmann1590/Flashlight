@@ -35,6 +35,13 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease bundleRelease
 
+      - name: Verify release ads are enabled
+        run: |
+          if ! rg -n "ADS_ENABLED\\s*=\\s*true" app/build/generated/source/buildConfig/release --glob "BuildConfig.java"; then
+            echo "Release BuildConfig does not have ADS_ENABLED=true. Failing build."
+            exit 1
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

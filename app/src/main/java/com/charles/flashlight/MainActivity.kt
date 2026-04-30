@@ -31,7 +31,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         cameraId = runCatching { cameraManager.cameraIdList.firstOrNull() }.getOrNull()
-        interstitial = InterstitialController(this).also { it.preload() }
+        interstitial = InterstitialController(this).also {
+            if (BuildConfig.ADS_ENABLED) it.preload()
+        }
 
         setContent {
             MaterialTheme {
@@ -45,7 +47,9 @@ class MainActivity : ComponentActivity() {
                         val next = !isOn
                         toggleTorch(next)
                         isOn = next
-                        if (next) interstitial.showAlwaysOnTorch(this@MainActivity)
+                        if (next && BuildConfig.ADS_ENABLED) {
+                            interstitial.showAlwaysOnTorch(this@MainActivity)
+                        }
                     }) {
                         Text(if (isOn) getString(R.string.turn_off) else getString(R.string.turn_on))
                     }

@@ -1,44 +1,56 @@
 # Flashlight
 
-Android flashlight app with release CI.
+Modern Android flashlight app (Kotlin + Compose) with Firebase telemetry, AdMob monetization, signed release automation, and a published GitHub Pages website.
 
-## CI secrets
+## Website
 
-Set these repository secrets:
+- Live site: https://chartmann1590.github.io/Flashlight/
+- In-app link: `About Website` button in `MainActivity`
 
-- `RELEASE_KEYSTORE_B64`
-- `RELEASE_STORE_PASSWORD`
-- `RELEASE_KEY_ALIAS`
-- `RELEASE_KEY_PASSWORD`
+## Workflow Status
+
+[![Android Signed Release](https://github.com/chartmann1590/Flashlight/actions/workflows/android-release.yml/badge.svg)](https://github.com/chartmann1590/Flashlight/actions/workflows/android-release.yml)
+[![Deploy GitHub Pages](https://github.com/chartmann1590/Flashlight/actions/workflows/pages.yml/badge.svg)](https://github.com/chartmann1590/Flashlight/actions/workflows/pages.yml)
+[![E2E Website Tests](https://github.com/chartmann1590/Flashlight/actions/workflows/e2e.yml/badge.svg)](https://github.com/chartmann1590/Flashlight/actions/workflows/e2e.yml)
+
+## App Highlights
+
+- Torch toggle with always-on interstitial trigger when turning ON
+- Firebase Crashlytics + Performance Monitoring
+- AdMob integration (release build includes ads enabled guard)
+- Signed APK/AAB GitHub release pipeline
+
+## CI/CD
+
+### Signed Android release
 
 Workflow: `.github/workflows/android-release.yml`
-# Flashlight
 
-Modern Android flashlight app (Kotlin + Compose) with:
+Required repository secrets:
 
-- Torch, strobe, SOS, and screen-light modes
-- Firebase Crashlytics + Performance instrumentation
-- AdMob banner/interstitial/native ads
-- Home-screen widget
-
-## CI Release Workflow
-
-GitHub Actions workflow: `.github/workflows/android-release.yml`
-
-To produce signed release artifacts in CI, configure repository secrets:
-
-- `RELEASE_KEYSTORE_B64`: base64-encoded keystore file
+- `RELEASE_KEYSTORE_B64` (base64-encoded keystore)
 - `RELEASE_STORE_PASSWORD`
 - `RELEASE_KEY_ALIAS`
 - `RELEASE_KEY_PASSWORD`
 
-When run, CI generates:
+Output artifacts:
 
-- Signed APK: `flashlight-release.apk`
-- Signed AAB: `flashlight-release.aab`
+- `app/build/outputs/apk/release/app-release.apk`
+- `app/build/outputs/bundle/release/app-release.aab`
 
-Tag a release as `v*` to auto-create a GitHub Release with attached artifacts.
+Release guard:
 
-## GitHub Pages
+- CI fails if release `BuildConfig` does not contain `ADS_ENABLED = true`
 
-Pages content is in `docs/` and deployed by `.github/workflows/pages.yml`.
+### GitHub Pages deployment
+
+Workflow: `.github/workflows/pages.yml`
+
+- Deploys `docs/` to GitHub Pages on push to `main`
+
+### E2E workflow
+
+Workflow: `.github/workflows/e2e.yml`
+
+- Runs Playwright end-to-end checks against the live website
+- Verifies page title, main call-to-action links, and screenshot assets

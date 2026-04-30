@@ -76,6 +76,22 @@
       flex-wrap: wrap;
       gap: .8rem;
     }
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: 1rem;
+    }
+    .status a {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+    }
+    .status img {
+      height: 20px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
     .btn {
       display: inline-flex;
       align-items: center;
@@ -174,12 +190,25 @@
       border-radius: 1rem;
       border: 1px solid var(--border);
       background: linear-gradient(160deg, #1e1e1e, #111);
-      padding: .9rem;
-      min-height: 180px;
-      display: grid;
-      place-items: center;
-      text-align: center;
+      padding: .65rem;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .shot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: .75rem;
+      border: 1px solid rgba(255,255,255,.1);
+      background: #0d0d0d;
+    }
+    .shot p {
+      margin: 0;
       color: #d2d2d2;
+      font-size: .9rem;
+      text-align: center;
     }
     footer {
       margin-top: 2.5rem;
@@ -220,6 +249,14 @@
           <a class="btn btn-primary" href="https://github.com/chartmann1590/Flashlight/releases">Download Latest Release</a>
           <a class="btn btn-secondary" href="https://github.com/chartmann1590/Flashlight">View Source on GitHub</a>
         </div>
+        <div class="status">
+          <a href="https://github.com/chartmann1590/Flashlight/actions/workflows/android-release.yml"><img alt="Android Signed Release" src="https://github.com/chartmann1590/Flashlight/actions/workflows/android-release.yml/badge.svg"></a>
+          <a href="https://github.com/chartmann1590/Flashlight/actions/workflows/pages.yml"><img alt="Deploy GitHub Pages" src="https://github.com/chartmann1590/Flashlight/actions/workflows/pages.yml/badge.svg"></a>
+          <a href="https://github.com/chartmann1590/Flashlight/actions/workflows/e2e.yml"><img alt="E2E Website Tests" src="https://github.com/chartmann1590/Flashlight/actions/workflows/e2e.yml/badge.svg"></a>
+        </div>
+        <p class="lead" style="margin-top:1rem;margin-bottom:0;">
+          Website URL: <a href="https://chartmann1590.github.io/Flashlight/" style="color:var(--gold-soft);">https://chartmann1590.github.io/Flashlight/</a>
+        </p>
       </div>
       <div class="phone">
         <div class="screen">
@@ -253,11 +290,20 @@
 
     <section>
       <h2 class="section-title">Screenshots & preview</h2>
-      <p class="section-sub">Current visual style and flow.</p>
+      <p class="section-sub">Actual screenshots captured from Pixel 8 Pro.</p>
       <div class="shots">
-        <div class="shot"><strong>Home screen</strong><br>single-action flashlight control</div>
-        <div class="shot"><strong>Torch ON</strong><br>interstitial shown on activation</div>
-        <div class="shot"><strong>Release pipeline</strong><br>signed APK + AAB artifacts</div>
+        <div class="shot">
+          <img src="screenshots/flashlight-home.png" alt="Flashlight home screen">
+          <p><strong>Home screen</strong> - flashlight ready state</p>
+        </div>
+        <div class="shot">
+          <img src="screenshots/flashlight-on.png" alt="Flashlight on screen">
+          <p><strong>Torch ON</strong> - ON state from real device</p>
+        </div>
+        <div class="shot">
+          <img src="screenshots/website-live.png" alt="Flashlight website on phone">
+          <p><strong>Website open</strong> - launched from in-app About button</p>
+        </div>
       </div>
     </section>
   </main>

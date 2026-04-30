@@ -36,9 +36,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField "boolean", "ADS_ENABLED", "true"
+        }
         release {
             minifyEnabled true
             shrinkResources true
+            buildConfigField "boolean", "ADS_ENABLED", "true"
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (hasReleaseSigning) signingConfig signingConfigs.release
         }

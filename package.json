@@ -1,0 +1,13 @@
+{
+  "name": "flashlight-e2e",
+  "private": true,
+  "scripts": {
+    "serve:docs": "http-server docs -p 4173 -c-1",
+    "test:e2e": "playwright test --config=playwright.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "http-server": "^14.1.1",
+    "typescript": "^5.8.3"
+  }
+}
