@@ -33,11 +33,25 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleRelease bundleRelease
+          set -e
+          for attempt in 1 2 3 4 5; do
+            if ./gradlew --no-daemon assembleRelease bundleRelease; then
+              exit 0
+            fi
+            echo "Gradle attempt ${attempt} failed (often transient Maven Central 403). Retrying in 25s..."
+            sleep 25
+          done
+          echo "Gradle failed after 5 attempts."
+          exit 1
 
       - name: Verify release ads are enabled
         run: |
-          if ! rg -n "ADS_ENABLED\\s*=\\s*true" app/build/generated/source/buildConfig/release --glob "BuildConfig.java"; then
+          bc="app/build/generated/source/buildConfig/release/com/charles/flashlight/BuildConfig.java"
+          if [ ! -f "$bc" ]; then
+            echo "Missing $bc"
+            exit 1
+          fi
+          if ! grep -q 'ADS_ENABLED = true' "$bc"; then
             echo "Release BuildConfig does not have ADS_ENABLED=true. Failing build."
             exit 1
           fi
