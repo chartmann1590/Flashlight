@@ -4,7 +4,7 @@ test("website renders screenshots and release CTA", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle(/Flashlight/);
-  await expect(page.getByRole("link", { name: /Download Latest Release/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Download signed APK/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /View Source on GitHub/i })).toBeVisible();
 
   const screenshots = [

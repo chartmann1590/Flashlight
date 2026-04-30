@@ -33,7 +33,15 @@ Required repository secrets:
 - `RELEASE_KEY_ALIAS`
 - `RELEASE_KEY_PASSWORD`
 
-Output artifacts:
+Where to download signed builds:
+
+- **GitHub Releases (recommended):** each successful run on `main` publishes a rolling prerelease **`ci-signed-latest`** with the signed APK and AAB attached:  
+  https://github.com/chartmann1590/Flashlight/releases/tag/ci-signed-latest  
+  (Older runs are also kept as a **workflow artifact** zip on the Actions run page.)
+
+- **Official versioned releases:** when you publish a GitHub Release from the UI, the same workflow attaches `app-release.apk` and `app-release.aab` to that release (`release` event).
+
+Build outputs (paths inside the repo / runner):
 
 - `app/build/outputs/apk/release/app-release.apk`
 - `app/build/outputs/bundle/release/app-release.aab`

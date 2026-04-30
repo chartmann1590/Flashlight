@@ -64,6 +64,37 @@ jobs:
             app/build/outputs/apk/release/app-release.apk
             app/build/outputs/bundle/release/app-release.aab
 
+      # On push / manual run: publish APK + AAB to the Releases tab (not only Actions artifacts).
+      - name: Publish rolling signed release (APK + AAB)
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="ci-signed-latest"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          git tag -f "$TAG" "${GITHUB_SHA}"
+          git push origin "refs/tags/${TAG}" --force
+          NOTES_FILE="$(mktemp)"
+          {
+            echo "Signed **release** APK and Play Store **AAB** from the latest successful workflow on \`main\`."
+            echo
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- [View workflow run](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo
+            echo "Install the \`.apk\` for sideloading; upload the \`.aab\` to Play Console."
+          } > "$NOTES_FILE"
+          gh release create "$TAG" \
+            --title "Signed CI build (latest main)" \
+            --notes-file "$NOTES_FILE" \
+            app/build/outputs/apk/release/app-release.apk \
+            app/build/outputs/bundle/release/app-release.aab \
+            --prerelease
+          rm -f "$NOTES_FILE"
+
       - name: Attach artifacts to GitHub Release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
