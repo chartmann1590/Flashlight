@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.charles.flashlight.ads.InterstitialController
 
 class MainActivity : ComponentActivity() {
@@ -39,28 +40,49 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 var isOn by remember { mutableStateOf(false) }
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("e2e_home"),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Button(onClick = {
-                        val next = !isOn
-                        toggleTorch(next)
-                        isOn = next
-                        if (next && BuildConfig.ADS_ENABLED) {
-                            interstitial.showAlwaysOnTorch(this@MainActivity)
+                    Button(
+                        modifier = Modifier.testTag("e2e_torch_toggle"),
+                        onClick = {
+                            val next = !isOn
+                            toggleTorch(next)
+                            isOn = next
+                            if (next && BuildConfig.ADS_ENABLED) {
+                                interstitial.showAlwaysOnTorch(this@MainActivity)
+                            }
                         }
-                    }) {
+                    ) {
                         Text(if (isOn) getString(R.string.turn_off) else getString(R.string.turn_on))
                     }
-                    Button(onClick = {
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://chartmann1590.github.io/Flashlight/")
-                        )
-                        startActivity(intent)
-                    }) {
+                    Button(
+                        modifier = Modifier.testTag("e2e_about_website"),
+                        onClick = {
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://chartmann1590.github.io/Flashlight/")
+                            )
+                            startActivity(intent)
+                        }
+                    ) {
                         Text(getString(R.string.about_website))
+                    }
+                    Button(
+                        modifier = Modifier.testTag("e2e_buy_me_a_coffee"),
+                        onClick = {
+                            startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse(getString(R.string.buymeacoffee_url))
+                                )
+                            )
+                        }
+                    ) {
+                        Text(getString(R.string.buy_me_a_coffee))
                     }
                 }
             }

@@ -3,4 +3,6 @@
     <string name="turn_on">Turn On</string>
     <string name="turn_off">Turn Off</string>
     <string name="about_website">About Website</string>
+    <string name="buy_me_a_coffee">Buy me a coffee</string>
+    <string name="buymeacoffee_url" translatable="false">https://buymeacoffee.com/charleshartmann</string>
 </resources>
