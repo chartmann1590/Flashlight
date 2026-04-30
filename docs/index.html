@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Flashlight - Fast. Bright. Clean.</title>
-  <meta name="description" content="Flashlight is a sleek Android flashlight app with torch control, interstitial monetization, and signed CI releases.">
+  <meta name="description" content="Flashlight is a fast, simple Android flashlight: one tap for the LED torch, links to the project site, and an optional way to support the developer.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
@@ -140,21 +140,21 @@
       text-align: center;
       padding: 1.2rem;
     }
+    .screen-real {
+      padding: 0;
+      overflow: hidden;
+    }
+    .hero-shot {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
     .screen h3 {
       margin: 0;
       font-size: 1.6rem;
       font-family: "Sora", sans-serif;
-    }
-    .ring {
-      width: 72%;
-      aspect-ratio: 1;
-      border-radius: 999px;
-      margin: 1rem auto;
-      border: 2px solid rgba(255, 179, 0, .5);
-      box-shadow:
-        0 0 0 14px rgba(255,179,0,.06),
-        0 0 0 30px rgba(255,179,0,.04),
-        0 0 60px rgba(255,179,0,.25);
     }
     section { padding: 2rem 0; }
     .section-title {
@@ -242,8 +242,7 @@
       <div>
         <h1>Fast. Bright. Clean.<br>Flashlight for Android.</h1>
         <p class="lead">
-          A stripped-down flashlight experience with a modern UI, smooth torch toggling, and production release automation.
-          Built to launch instantly and stay out of your way.
+          One tap turns your phone’s LED torch on or off. Open the project page from the app, grab the latest install files when you need them, or say thanks with a coffee—without digging through menus.
         </p>
         <div class="cta">
           <a class="btn btn-primary" href="https://github.com/chartmann1590/Flashlight/releases/latest">Download signed APK &amp; AAB</a>
@@ -260,50 +259,46 @@
         </p>
       </div>
       <div class="phone">
-        <div class="screen">
-          <div>
-            <h3>Flashlight</h3>
-            <div class="ring"></div>
-            <p style="margin:0;color:#bdbdbd;">Tap to toggle torch.<br>Ad appears when switched ON.</p>
-          </div>
+        <div class="screen screen-real">
+          <img class="hero-shot" src="screenshots/flashlight-home.png" width="1008" height="2244" alt="Flashlight app on Android: torch, website, and Buy me a coffee">
         </div>
       </div>
     </section>
 
     <section>
       <h2 class="section-title">Why this app</h2>
-      <p class="section-sub">Minimal distractions, fast interaction loop, and stable signed builds.</p>
+      <p class="section-sub">Built for when you just need light—nothing else in the way.</p>
       <div class="grid">
         <article class="card">
-          <h3>Instant torch control</h3>
-          <p>Simple one-button flow with direct camera torch toggling.</p>
+          <h3>Instant torch</h3>
+          <p>Turn the LED on or off from the main screen. No clutter, no hunting for settings.</p>
         </article>
         <article class="card">
-          <h3>Monetized on ON event</h3>
-          <p>Interstitial is triggered whenever users turn the flashlight on.</p>
+          <h3>Links where you need them</h3>
+          <p>Open the Flashlight website for downloads and details, or Buy me a coffee if you want to support the project.</p>
         </article>
         <article class="card">
-          <h3>Signed CI releases</h3>
-          <p>GitHub Actions builds signed APK/AAB from encrypted repository secrets.</p>
+          <h3>Always up to date</h3>
+          <p>New builds land on GitHub whenever the app is improved—grab the latest APK or Play bundle when you are ready.</p>
         </article>
       </div>
     </section>
 
     <section>
-      <h2 class="section-title">Screenshots & preview</h2>
-      <p class="section-sub">Actual screenshots captured from Pixel 8 Pro.</p>
+      <h2 class="section-title">Screenshots</h2>
+      <p class="section-sub">Real captures from a Pixel phone (your UI may vary slightly by theme).</p>
       <div class="shots">
         <div class="shot">
           <img src="screenshots/flashlight-home.png" alt="Flashlight home screen">
-          <p><strong>Home screen</strong> - flashlight ready state</p>
+          <p><strong>Home</strong> — torch off, plus shortcuts to the project site and Buy me a coffee.</p>
         </div>
         <div class="shot">
           <img src="screenshots/flashlight-on.png" alt="Flashlight on screen">
-          <p><strong>Torch ON</strong> - ON state from real device</p>
+          <p><strong>Torch on</strong> — LED is lit; tap again to turn off.</p>
         </div>
         <div class="shot">
           <img src="screenshots/website-live.png" alt="Flashlight website on phone">
-          <p><strong>Website open</strong> - launched from in-app About button</p>
+          <p><strong>Project site</strong> — opened from the in-app “About Website” button in the browser.</p>
         </div>
       </div>
     </section>
@@ -311,7 +306,7 @@
 
   <footer>
     <div class="wrap">
-      Flashlight • Android • Release artifacts: <code>app-release.apk</code> and <code>app-release.aab</code>
+      Flashlight for Android • <a href="https://github.com/chartmann1590/Flashlight/releases/latest" style="color:var(--gold-soft);">Get the app</a>
       • <a href="https://buymeacoffee.com/charleshartmann" style="color:var(--gold-soft);">Buy me a coffee</a>
     </div>
   </footer>
