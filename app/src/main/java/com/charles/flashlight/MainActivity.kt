@@ -1,8 +1,10 @@
 package com.charles.flashlight
 
 import android.content.Context
+import android.content.Intent
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -46,6 +48,15 @@ class MainActivity : ComponentActivity() {
                         if (next) interstitial.showAlwaysOnTorch(this@MainActivity)
                     }) {
                         Text(if (isOn) getString(R.string.turn_off) else getString(R.string.turn_on))
+                    }
+                    Button(onClick = {
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://chartmann1590.github.io/Flashlight/")
+                        )
+                        startActivity(intent)
+                    }) {
+                        Text(getString(R.string.about_website))
                     }
                 }
             }
