@@ -10,6 +10,22 @@
 
 A short ad may appear when you turn the light on; that helps keep the app free to build and ship.
 
+## Screenshots
+
+Real captures from a Pixel phone (layout may vary slightly with system theme).
+
+**Home** — torch off, with shortcuts to the project site, privacy policy, and Buy me a coffee.
+
+![Flashlight home screen: torch off and action buttons](docs/screenshots/flashlight-home.png)
+
+**Torch on** — LED is on; tap again to turn off.
+
+![Flashlight with torch on](docs/screenshots/flashlight-on.png)
+
+**Project site** — marketing page opened in the browser from the in-app “About Website” button.
+
+![Flashlight marketing website on a phone](docs/screenshots/website-live.png)
+
 ## Download the app
 
 **Latest install files (signed APK and Play Store bundle):**  
