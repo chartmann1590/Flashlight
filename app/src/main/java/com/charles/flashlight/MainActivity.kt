@@ -1,0 +1,62 @@
+package com.charles.flashlight
+
+import android.content.Context
+import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraManager
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import com.charles.flashlight.ads.InterstitialController
+
+class MainActivity : ComponentActivity() {
+    private lateinit var cameraManager: CameraManager
+    private var cameraId: String? = null
+    private lateinit var interstitial: InterstitialController
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        cameraId = runCatching { cameraManager.cameraIdList.firstOrNull() }.getOrNull()
+        interstitial = InterstitialController(this).also { it.preload() }
+
+        setContent {
+            MaterialTheme {
+                var isOn by remember { mutableStateOf(false) }
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Button(onClick = {
+                        val next = !isOn
+                        toggleTorch(next)
+                        isOn = next
+                        if (next) interstitial.showAlwaysOnTorch(this@MainActivity)
+                    }) {
+                        Text(if (isOn) getString(R.string.turn_off) else getString(R.string.turn_on))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun toggleTorch(enabled: Boolean) {
+        val id = cameraId ?: return
+        try {
+            cameraManager.setTorchMode(id, enabled)
+        } catch (_: CameraAccessException) {
+        }
+    }
+}
