@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">Flashlight</string>
+    <string name="home_tagline">Bright, minimal, and built for the moment you actually need a light.</string>
+    <string name="torch_off_hint">Tap the ring to turn on</string>
+    <string name="torch_on_hint">Tap again to turn off</string>
+    <string name="about_website_short">Website</string>
+    <string name="privacy_short">Privacy</string>
     <string name="turn_on">Turn On</string>
     <string name="turn_off">Turn Off</string>
     <string name="about_website">About Website</string>
