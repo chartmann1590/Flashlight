@@ -75,41 +75,51 @@ jobs:
             app/build/outputs/apk/release/app-release.apk
             app/build/outputs/bundle/release/app-release.aab
 
-      # On push / manual run: publish APK + AAB to the Releases tab (not only Actions artifacts).
-      - name: Publish rolling signed release (APK + AAB)
+      # Real GitHub Release with downloadable assets (APK + AAB). Uses --target so the tag is created on GitHub with binaries attached.
+      - name: Publish GitHub Release (signed APK + AAB)
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          TAG="ci-signed-latest"
+          gh release delete ci-signed-latest --yes --cleanup-tag 2>/dev/null || true
           BC="app/build/generated/source/buildConfig/release/com/charles/flashlight/BuildConfig.java"
           VC="$(sed -n 's/.*VERSION_CODE = \([0-9]*\);.*/\1/p' "$BC")"
           VN="$(sed -n 's/.*VERSION_NAME = "\([^"]*\)";.*/\1/p' "$BC")"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-          git tag -f "$TAG" "${GITHUB_SHA}"
-          git push origin "refs/tags/${TAG}" --force
+          APK_SRC="app/build/outputs/apk/release/app-release.apk"
+          AAB_SRC="app/build/outputs/bundle/release/app-release.aab"
+          for f in "$APK_SRC" "$AAB_SRC"; do
+            test -f "$f" || { echo "Missing artifact: $f"; exit 1; }
+            ls -la "$f"
+          done
+          REL_APK="Flashlight-${VN}-signed.apk"
+          REL_AAB="Flashlight-${VN}-PlayStore-signed.aab"
+          cp "$APK_SRC" "$REL_APK"
+          cp "$AAB_SRC" "$REL_AAB"
+          # Unique per workflow run (re-runs keep same run_id; delete+recreate is OK)
+          TAG="v${VN}-ci${GITHUB_RUN_ID}"
           NOTES_FILE="$(mktemp)"
           {
-            echo "Signed **release** APK and Play Store **AAB** from the latest successful workflow on \`main\`."
+            echo "Signed **release APK** and **Android App Bundle (AAB)** for Play Console."
             echo
-            echo "- **versionCode:** \`${VC}\` (Play Store must increase each upload; CI bumps every run)"
+            echo "- **versionCode:** \`${VC}\`"
             echo "- **versionName:** \`${VN}\`"
-            echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- [View workflow run](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo "- Commit: [\`${GITHUB_SHA:0:7}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA})"
+            echo "- [Workflow run](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
             echo
-            echo "Install the \`.apk\` for sideloading; upload the \`.aab\` to Play Console."
+            echo "Download **${REL_APK}** to sideload, or **${REL_AAB}** for Play Store upload."
           } > "$NOTES_FILE"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
           gh release create "$TAG" \
-            --title "Signed CI build (latest main)" \
+            --target "${GITHUB_SHA}" \
+            --title "Flashlight ${VN} (versionCode ${VC})" \
             --notes-file "$NOTES_FILE" \
-            app/build/outputs/apk/release/app-release.apk \
-            app/build/outputs/bundle/release/app-release.aab \
-            --prerelease
-          rm -f "$NOTES_FILE"
+            --latest \
+            "$REL_APK" \
+            "$REL_AAB"
+          rm -f "$NOTES_FILE" "$REL_APK" "$REL_AAB"
+          echo "Published release: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+          gh release view "$TAG" --json assets --jq '.assets[].name'
 
       - name: Attach artifacts to GitHub Release
         if: github.event_name == 'release'
