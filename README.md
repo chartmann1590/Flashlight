@@ -50,6 +50,13 @@ Release guard:
 
 - CI fails if release `BuildConfig` does not contain `ADS_ENABLED = true`
 
+Play Store versioning (automatic on CI):
+
+- On GitHub Actions, **`versionCode` = `2_000_000 + GITHUB_RUN_NUMBER`** so every workflow run produces a strictly higher code than the last (required for Play uploads).
+- **`versionName`** defaults to **`2.0.<run number>`** on CI, or set explicitly with env `CI_VERSION_NAME`.
+- Override either value in a workflow if needed: **`CI_PLAY_VERSION_CODE`** (int) or **`CI_VERSION_NAME`** (string).
+- Local/Android Studio builds keep **`versionCode` 3** and **`versionName` 2.0** when those CI env vars are unset.
+
 ### GitHub Pages deployment
 
 Workflow: `.github/workflows/pages.yml`

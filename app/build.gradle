@@ -10,12 +10,42 @@ android {
     namespace 'com.charles.flashlight'
     compileSdk 34
 
+    // Play Store: versionCode must increase on every upload. CI sets this via GITHUB_RUN_NUMBER.
+    def envIntOrNull = { String key ->
+        def v = System.getenv(key)
+        if (v == null) return null
+        v = v.trim()
+        if (v.isEmpty()) return null
+        try {
+            return Integer.parseInt(v)
+        } catch (NumberFormatException ignored) {
+            return null
+        }
+    }
+    def playVersionCode = {
+        def explicit = envIntOrNull("CI_PLAY_VERSION_CODE")
+        if (explicit != null) return explicit
+        def runNum = envIntOrNull("GITHUB_RUN_NUMBER")
+        if (runNum != null) {
+            // Offset keeps CI builds above any legacy manual versionCodes already on Play.
+            return 2_000_000 + runNum
+        }
+        return 3
+    }()
+    def playVersionName = {
+        def v = System.getenv("CI_VERSION_NAME")
+        if (v != null && !v.trim().isEmpty()) return v.trim()
+        def runNum = System.getenv("GITHUB_RUN_NUMBER")
+        if (runNum != null && !runNum.trim().isEmpty()) return "2.0.${runNum.trim()}"
+        return "2.0"
+    }()
+
     defaultConfig {
         applicationId "com.charles.flashlight"
         minSdk 24
         targetSdk 34
-        versionCode 3
-        versionName "2.0"
+        versionCode playVersionCode
+        versionName playVersionName
     }
 
     def releaseStoreFile = System.getenv("RELEASE_STORE_FILE")

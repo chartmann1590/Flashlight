@@ -56,6 +56,17 @@ jobs:
             exit 1
           fi
 
+      - name: Assert Play Store versionCode bumped on CI
+        run: |
+          bc="app/build/generated/source/buildConfig/release/com/charles/flashlight/BuildConfig.java"
+          vc="$(sed -n 's/.*VERSION_CODE = \([0-9]*\);.*/\1/p' "$bc")"
+          vn="$(sed -n 's/.*VERSION_NAME = "\([^"]*\)";.*/\1/p' "$bc")"
+          echo "Built versionCode=${vc} versionName=${vn}"
+          if [ -z "$vc" ] || [ "$vc" -lt 2000000 ]; then
+            echo "On CI, versionCode must be >= 2000000 (2_000_000 + GITHUB_RUN_NUMBER). Got: ${vc:-empty}"
+            exit 1
+          fi
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -72,6 +83,9 @@ jobs:
         run: |
           set -e
           TAG="ci-signed-latest"
+          BC="app/build/generated/source/buildConfig/release/com/charles/flashlight/BuildConfig.java"
+          VC="$(sed -n 's/.*VERSION_CODE = \([0-9]*\);.*/\1/p' "$BC")"
+          VN="$(sed -n 's/.*VERSION_NAME = "\([^"]*\)";.*/\1/p' "$BC")"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
@@ -82,6 +96,8 @@ jobs:
           {
             echo "Signed **release** APK and Play Store **AAB** from the latest successful workflow on \`main\`."
             echo
+            echo "- **versionCode:** \`${VC}\` (Play Store must increase each upload; CI bumps every run)"
+            echo "- **versionName:** \`${VN}\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
             echo "- [View workflow run](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
             echo
