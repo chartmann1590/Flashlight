@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace 'com.charles.flashlight'
-    compileSdk 34
+    compileSdk 35
 
     // Play Store: versionCode must increase on every upload. CI uses GITHUB_RUN_NUMBER * 1000 +
     // GITHUB_RUN_ATTEMPT so re-runs of the same workflow (same run number) still bump the code.
@@ -74,7 +74,7 @@ android {
     defaultConfig {
         applicationId "com.charles.flashlight"
         minSdk 24
-        targetSdk 34
+        targetSdk 35
         versionCode playVersionCode
         versionName playVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
