@@ -39,13 +39,5 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: |
-            chmod +x gradlew
-            for attempt in 1 2 3 4 5; do
-              if ./gradlew --no-daemon connectedDebugAndroidTest --stacktrace; then
-                exit 0
-              fi
-              echo "Gradle attempt ${attempt} failed (often transient). Retrying in 25s..."
-              sleep 25
-            done
-            exit 1
+          # One line: the emulator action runs each YAML line as a separate `sh -c` (breaks for-loops).
+          script: chmod +x scripts/ci-android-connected-test.sh && bash scripts/ci-android-connected-test.sh
