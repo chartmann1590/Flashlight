@@ -10,7 +10,8 @@ android {
     namespace 'com.charles.flashlight'
     compileSdk 34
 
-    // Play Store: versionCode must increase on every upload. CI sets this via GITHUB_RUN_NUMBER.
+    // Play Store: versionCode must increase on every upload. CI uses GITHUB_RUN_NUMBER * 1000 +
+    // GITHUB_RUN_ATTEMPT so re-runs of the same workflow (same run number) still bump the code.
     def envIntOrNull = { String key ->
         def v = System.getenv(key)
         if (v == null) return null
@@ -46,8 +47,11 @@ android {
         if (explicit != null) return explicit
         def runNum = envIntOrNull("GITHUB_RUN_NUMBER")
         if (runNum != null) {
+            def attempt = envIntOrNull("GITHUB_RUN_ATTEMPT")
+            if (attempt == null || attempt < 1) attempt = 1
+            if (attempt > 999) attempt = 999
             // Offset keeps CI builds above any legacy manual versionCodes already on Play.
-            return 2_000_000 + runNum
+            return 2_000_000 + runNum * 1000 + attempt
         }
         if (localVersionCode != null) {
             return localVersionCode
@@ -59,7 +63,11 @@ android {
         def v = System.getenv("CI_VERSION_NAME")
         if (v != null && !v.trim().isEmpty()) return v.trim()
         def runNum = System.getenv("GITHUB_RUN_NUMBER")
-        if (runNum != null && !runNum.trim().isEmpty()) return "2.0.${runNum.trim()}"
+        if (runNum != null && !runNum.trim().isEmpty()) {
+            def att = System.getenv("GITHUB_RUN_ATTEMPT")
+            if (att == null || att.trim().isEmpty()) att = "1"
+            return "2.0.${runNum.trim()}.${att.trim()}"
+        }
         return "2.0"
     }()
 

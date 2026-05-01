@@ -27,6 +27,9 @@ jobs:
 
       - name: Build signed APK and AAB
         env:
+          # Gradle reads these for monotonic versionCode / versionName (incl. workflow re-runs).
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
           RELEASE_STORE_FILE: ${{ github.workspace }}/release-key.jks
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
@@ -63,7 +66,7 @@ jobs:
           vn="$(sed -n 's/.*VERSION_NAME = "\([^"]*\)";.*/\1/p' "$bc")"
           echo "Built versionCode=${vc} versionName=${vn}"
           if [ -z "$vc" ] || [ "$vc" -lt 2000000 ]; then
-            echo "On CI, versionCode must be >= 2000000 (2_000_000 + GITHUB_RUN_NUMBER). Got: ${vc:-empty}"
+            echo "On CI, versionCode must be >= 2000000 (2_000_000 + GITHUB_RUN_NUMBER*1000 + GITHUB_RUN_ATTEMPT). Got: ${vc:-empty}"
             exit 1
           fi
 
