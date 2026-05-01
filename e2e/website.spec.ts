@@ -11,7 +11,9 @@ test("website renders screenshots and release CTA", async ({ page }) => {
 
   const screenshots = [
     page.locator('img[alt="Flashlight home screen"]'),
-    page.locator('img[alt="Flashlight on screen"]'),
+    page.locator('img[alt="Flashlight torch on"]'),
+    page.locator('img[alt="Flashlight settings"]'),
+    page.locator('img[alt="Flashlight screen light"]'),
     page.locator('img[alt="Flashlight website on phone"]')
   ];
 

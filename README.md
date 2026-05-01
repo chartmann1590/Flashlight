@@ -4,27 +4,37 @@
 
 ## What you get
 
-- **Instant torch** — the main button toggles your camera LED.
-- **Project website** — from the app, open the Flashlight site for this page, screenshots, and install links.
-- **Say thanks** — optional [Buy me a coffee](https://buymeacoffee.com/charleshartmann) if you want to support development.
+- **Instant torch** — big ring toggles the LED; choose **Steady**, **Strobe**, or **SOS**.
+- **Screen light** — full-screen panel light with brightness and color presets when you do not want the camera LED.
+- **Settings** — shake-to-toggle, haptics, sound, strobe speed, and auto-off timer.
+- **Overflow menu** — About, website, privacy, and Buy me a coffee (no clutter on the main screen).
+- **Home-screen widget** — open the app or toggle the torch from a widget.
 
 A short ad may appear when you turn the light on; that helps keep the app free to build and ship.
 
 ## Screenshots
 
-Real captures from a Pixel phone (layout may vary slightly with system theme).
+Real captures from a Pixel 8 Pro (your UI may vary slightly with system theme).
 
-**Home** — torch off, with shortcuts to the project site, privacy policy, and Buy me a coffee.
+**Home** — top bar (Settings and menu), mode row, screen light button, torch ring, and hints.
 
-![Flashlight home screen: torch off and action buttons](docs/screenshots/flashlight-home.png)
+![Flashlight home: segmented modes and torch off](docs/screenshots/flashlight-home.png)
 
-**Torch on** — LED is on; tap again to turn off.
+**Torch on** — LED on; status line shows mode and optional auto-off countdown.
 
 ![Flashlight with torch on](docs/screenshots/flashlight-on.png)
 
-**Project site** — marketing page opened in the browser from the in-app “About Website” button.
+**Settings** — behavior toggles, strobe speed, and auto-off timer in grouped cards.
 
-![Flashlight marketing website on a phone](docs/screenshots/website-live.png)
+![Flashlight settings screen](docs/screenshots/flashlight-settings.png)
+
+**Screen light** — warm fill with brightness slider and color presets.
+
+![Flashlight screen light tool](docs/screenshots/flashlight-screen-light.png)
+
+**Project site** — this marketing page in the mobile browser (same content as GitHub Pages).
+
+![Flashlight marketing site on a phone](docs/screenshots/website-live.png)
 
 ## Download the app
 
@@ -36,7 +46,7 @@ Use the **APK** to install directly on your device. Use the **AAB** if you publi
 ## This page in the browser
 
 **Marketing site:** [https://chartmann1590.github.io/Flashlight/](https://chartmann1590.github.io/Flashlight/)  
-Same content you can open from the app’s “About Website” button—screenshots, download buttons, and support link.
+Same content you can open from the app’s overflow menu (About / website links)—screenshots, download buttons, and support link.
 
 **Privacy policy:** [https://chartmann1590.github.io/Flashlight/privacy.html](https://chartmann1590.github.io/Flashlight/privacy.html)
 

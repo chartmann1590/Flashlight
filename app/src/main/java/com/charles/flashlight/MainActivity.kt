@@ -64,6 +64,9 @@ class MainActivity : ComponentActivity() {
                     if (intent?.getBooleanExtra(EXTRA_FROM_WIDGET_TOGGLE, false) == true) {
                         intent.removeExtra(EXTRA_FROM_WIDGET_TOGGLE)
                         torchViewModel.toggle()
+                        if (BuildConfig.ADS_ENABLED) {
+                            interstitial.maybeShowOnTorchToggle(this@MainActivity)
+                        }
                     }
                 }
 
@@ -76,7 +79,7 @@ class MainActivity : ComponentActivity() {
                     bannerAdUnitId = AdIds.adaptiveBannerId(this@MainActivity),
                     onTorchToggleForAds = {
                         if (BuildConfig.ADS_ENABLED) {
-                            interstitial.maybeShowOnTorchOn(this@MainActivity)
+                            interstitial.maybeShowOnTorchToggle(this@MainActivity)
                         }
                     },
                     onOpenWebsite = {
@@ -118,6 +121,9 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra(EXTRA_FROM_WIDGET_TOGGLE, false)) {
             intent.removeExtra(EXTRA_FROM_WIDGET_TOGGLE)
             torchViewModel.toggle()
+            if (BuildConfig.ADS_ENABLED) {
+                interstitial.maybeShowOnTorchToggle(this)
+            }
         }
     }
 

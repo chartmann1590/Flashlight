@@ -303,7 +303,6 @@ fun HomeScreen(
 
                     Surface(
                         onClick = {
-                            val wasOff = !isActive
                             torchViewModel.toggle()
                             if (hapticsEnabled) {
                                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -314,7 +313,7 @@ fun HomeScreen(
                                         .startTone(ToneGenerator.TONE_PROP_BEEP, 60)
                                 }
                             }
-                            if (wasOff && mode == TorchMode.STEADY && torchViewModel.isActive.value) {
+                            if (monetizationActive) {
                                 onTorchToggleForAds()
                             }
                         },

@@ -197,7 +197,7 @@
     .card p { margin: 0; color: var(--muted); font-size: .95rem; }
     .shots {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: .9rem;
     }
     .shot {
@@ -261,7 +261,7 @@
       <div>
         <h1>Fast. Bright. Clean.<br>Flashlight for Android.</h1>
         <p class="lead">
-          One tap turns your phone’s LED torch on or off. Open the project page from the app, grab the latest install files when you need them, or say thanks with a coffee—without digging through menus.
+          One tap toggles the LED. Pick steady, strobe, or SOS; open screen light when you want a soft panel glow; tune behavior in Settings. Links to this site, privacy, and support live in the top bar menu—so the main screen stays about the light.
         </p>
         <div class="cta">
           <a class="btn btn-primary" href="https://github.com/chartmann1590/Flashlight/releases/latest">Download signed APK &amp; AAB</a>
@@ -279,7 +279,7 @@
       </div>
       <div class="phone">
         <div class="screen screen-real">
-          <img class="hero-shot" src="screenshots/flashlight-home.png" width="1008" height="2244" alt="Flashlight app on Android: torch, website, and Buy me a coffee">
+          <img class="hero-shot" src="screenshots/flashlight-home.png" width="1008" height="2244" alt="Flashlight app on Android: home with modes, torch ring, and top bar">
         </div>
       </div>
     </section>
@@ -294,7 +294,7 @@
         </article>
         <article class="card">
           <h3>Links where you need them</h3>
-          <p>Open the Flashlight website for downloads and details, or Buy me a coffee if you want to support the project.</p>
+          <p>Use the ⋮ menu for About, this site, privacy, and Buy me a coffee—downloads and details stay one tap away.</p>
         </article>
         <article class="card">
           <h3>Always up to date</h3>
@@ -309,15 +309,23 @@
       <div class="shots">
         <div class="shot">
           <img src="screenshots/flashlight-home.png" alt="Flashlight home screen">
-          <p><strong>Home</strong> — torch off, plus shortcuts to the project site and Buy me a coffee.</p>
+          <p><strong>Home</strong> — Settings and ⋮ menu, Steady / Strobe / SOS, screen light, torch ring, and status hints.</p>
         </div>
         <div class="shot">
-          <img src="screenshots/flashlight-on.png" alt="Flashlight on screen">
-          <p><strong>Torch on</strong> — LED is lit; tap again to turn off.</p>
+          <img src="screenshots/flashlight-on.png" alt="Flashlight torch on">
+          <p><strong>Torch on</strong> — LED lit; status shows mode and optional auto-off countdown.</p>
+        </div>
+        <div class="shot">
+          <img src="screenshots/flashlight-settings.png" alt="Flashlight settings">
+          <p><strong>Settings</strong> — shake, haptics, sound, strobe speed, and auto-off timer in clear sections.</p>
+        </div>
+        <div class="shot">
+          <img src="screenshots/flashlight-screen-light.png" alt="Flashlight screen light">
+          <p><strong>Screen light</strong> — brightness slider and warm / neutral / cool / night red presets.</p>
         </div>
         <div class="shot">
           <img src="screenshots/website-live.png" alt="Flashlight website on phone">
-          <p><strong>Project site</strong> — opened from the in-app “About Website” button in the browser.</p>
+          <p><strong>This site</strong> — same page in the browser; downloads and policy links match the app menu.</p>
         </div>
       </div>
     </section>

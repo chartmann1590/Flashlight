@@ -8,7 +8,6 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import kotlin.random.Random
 
 class InterstitialController(private val context: Context) {
     private var ad: InterstitialAd? = null
@@ -37,15 +36,12 @@ class InterstitialController(private val context: Context) {
     }
 
     /**
-     * When the user turns the torch on: show sometimes, with a cooldown, so sessions stay usable.
+     * When the user toggles the torch (on or off): show an interstitial if one is ready and the
+     * cooldown has passed, so back-to-back taps do not stack full-screen ads.
      */
-    fun maybeShowOnTorchOn(activity: Activity) {
+    fun maybeShowOnTorchToggle(activity: Activity) {
         val now = SystemClock.elapsedRealtime()
         if (now - lastShowElapsedMs < COOLDOWN_MS) {
-            preload()
-            return
-        }
-        if (Random.nextDouble() > SHOW_PROBABILITY) {
             preload()
             return
         }
@@ -65,7 +61,6 @@ class InterstitialController(private val context: Context) {
     }
 
     companion object {
-        private const val SHOW_PROBABILITY = 0.35
-        private const val COOLDOWN_MS = 90_000L
+        private const val COOLDOWN_MS = 30_000L
     }
 }
