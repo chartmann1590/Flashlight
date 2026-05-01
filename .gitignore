@@ -25,6 +25,7 @@ local.properties
 *.apk
 *.aab
 *.keystore
+keystore.properties
 node_modules/
 playwright-report/
 test-results/

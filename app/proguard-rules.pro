@@ -35,5 +35,13 @@
 -keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver { *; }
 -keep class com.charles.flashlight.widget.** { *; }
 
+# App code (Navigation Compose + ViewModels rely on stable names; avoid huge androidx.* keeps — they can break R8)
+-keepnames class com.charles.flashlight.** { *; }
+-keep class com.charles.flashlight.** { *; }
+
+# Play In-App Review
+-keep class com.google.android.play.core.review.** { *; }
+-dontwarn com.google.android.play.core.**
+
 # Compose tooling sometimes needs reflection on @Preview composables in debug;
 # release stripping is fine, no extra rules required.

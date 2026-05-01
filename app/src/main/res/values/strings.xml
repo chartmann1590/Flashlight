@@ -12,4 +12,44 @@
     <string name="buymeacoffee_url" translatable="false">https://buymeacoffee.com/charleshartmann</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="privacy_policy_url" translatable="false">https://chartmann1590.github.io/Flashlight/privacy.html</string>
+    <!-- AdMob adaptive banner (release). Replace with your banner ad unit from AdMob if loads fail. -->
+    <string name="admob_banner_ad_unit_id" translatable="false">ca-app-pub-8382831211800454/4772910638</string>
+    <string name="back">Back</string>
+    <string name="settings_title">Settings</string>
+    <string name="about_title">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="settings_behavior">Behavior</string>
+    <string name="settings_shake_toggle">Shake to toggle torch</string>
+    <string name="settings_haptics">Haptic feedback</string>
+    <string name="settings_sound">Sound on toggle</string>
+    <string name="settings_auto_off">Auto-off timer</string>
+    <string name="settings_auto_off_off">Off</string>
+    <string name="settings_auto_off_minutes">%1$d minutes after turning on</string>
+    <string name="mode_steady">Steady</string>
+    <string name="mode_strobe">Strobe</string>
+    <string name="mode_sos">SOS</string>
+    <string name="screen_light_title">Screen light</string>
+    <string name="screen_light_close">Close screen light</string>
+    <string name="widget_title">Flashlight</string>
+    <string name="widget_toggle">Open / toggle</string>
+    <string name="widget_description">Open the app or toggle the torch from your home screen.</string>
+    <string name="home_tagline_short">Simple torch, screen light, and SOS when you need them.</string>
+    <string name="menu_more">More options</string>
+    <string name="status_mode_steady">Steady beam</string>
+    <string name="status_mode_strobe_ms">Strobe · ~%1$d ms full cycle</string>
+    <string name="status_mode_sos">SOS pattern</string>
+    <string name="status_auto_off_remaining">Auto-off in %1$s</string>
+    <string name="settings_section_behavior">Behavior</string>
+    <string name="settings_section_torch">Torch</string>
+    <string name="settings_section_timer">Timer</string>
+    <string name="settings_strobe_speed">Strobe speed</string>
+    <string name="settings_strobe_speed_summary">On/off each %1$d ms (lower is faster)</string>
+    <string name="about_tagline">Thanks for using Flashlight.</string>
+    <string name="about_section_actions">Links</string>
+    <string name="screen_light_brightness">Brightness</string>
+    <string name="screen_light_color_warm">Warm</string>
+    <string name="screen_light_color_neutral">Neutral</string>
+    <string name="screen_light_color_cool">Cool</string>
+    <string name="screen_light_color_red">Night red</string>
+    <string name="screen_light_color_presets">Screen color</string>
 </resources>

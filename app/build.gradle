@@ -22,6 +22,25 @@ android {
             return null
         }
     }
+    def localPropsFile = rootProject.file("local.properties")
+    def localProps = new Properties()
+    if (localPropsFile.exists()) {
+        localPropsFile.withInputStream { localProps.load(it) }
+    }
+    def keystorePropsFile = rootProject.file("keystore.properties")
+    def keystoreProps = new Properties()
+    if (keystorePropsFile.exists()) {
+        keystorePropsFile.withInputStream { keystoreProps.load(it) }
+    }
+    def localVersionCode = {
+        def raw = localProps.getProperty("flashlight.versionCode")
+        if (raw == null || raw.trim().isEmpty()) return null
+        try {
+            return Integer.parseInt(raw.trim())
+        } catch (NumberFormatException ignored) {
+            return null
+        }
+    }()
     def playVersionCode = {
         def explicit = envIntOrNull("CI_PLAY_VERSION_CODE")
         if (explicit != null) return explicit
@@ -30,7 +49,11 @@ android {
             // Offset keeps CI builds above any legacy manual versionCodes already on Play.
             return 2_000_000 + runNum
         }
-        return 3
+        if (localVersionCode != null) {
+            return localVersionCode
+        }
+        // Local signed APK sideload: stay above typical CI installs (2_000_000 + run). Bump if install fails.
+        return 2_100_001
     }()
     def playVersionName = {
         def v = System.getenv("CI_VERSION_NAME")
@@ -49,16 +72,23 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    def releaseStoreFile = System.getenv("RELEASE_STORE_FILE")
-    def releaseStorePassword = System.getenv("RELEASE_STORE_PASSWORD")
-    def releaseKeyAlias = System.getenv("RELEASE_KEY_ALIAS")
-    def releaseKeyPassword = System.getenv("RELEASE_KEY_PASSWORD")
-    def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+    def releaseStoreFileRaw = System.getenv("RELEASE_STORE_FILE") ?: keystoreProps.getProperty("storeFile")
+    def releaseStorePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: keystoreProps.getProperty("storePassword")
+    def releaseKeyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: keystoreProps.getProperty("keyAlias")
+    def releaseKeyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: keystoreProps.getProperty("keyPassword")
+    def releaseStoreFile = null
+    if (releaseStoreFileRaw != null && !releaseStoreFileRaw.trim().isEmpty()) {
+        def p = releaseStoreFileRaw.trim()
+        def f = new File(p)
+        releaseStoreFile = f.isAbsolute() ? f : rootProject.file(p)
+    }
+    def hasReleaseSigning = releaseStoreFile != null && releaseStorePassword &&
+            releaseKeyAlias && releaseKeyPassword
 
     signingConfigs {
         if (hasReleaseSigning) {
             release {
-                storeFile file(releaseStoreFile)
+                storeFile releaseStoreFile
                 storePassword releaseStorePassword
                 keyAlias releaseKeyAlias
                 keyPassword releaseKeyPassword
@@ -75,7 +105,12 @@ android {
             shrinkResources true
             buildConfigField "boolean", "ADS_ENABLED", "true"
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            if (hasReleaseSigning) signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            } else {
+                // Local sideload: signed APK required for install; use debug keystore when no upload key configured.
+                signingConfig signingConfigs.debug
+            }
         }
     }
 
@@ -95,6 +130,7 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.activity:activity-compose:1.9.1'
+    implementation 'androidx.activity:activity-ktx:1.9.1'
     implementation platform('androidx.compose:compose-bom:2024.06.00')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-tooling-preview'
@@ -102,12 +138,23 @@ dependencies {
     implementation 'androidx.compose.material:material-icons-extended'
     debugImplementation 'androidx.compose.ui:ui-tooling'
 
+    implementation 'androidx.navigation:navigation-compose:2.7.7'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.4'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
+    implementation 'androidx.datastore:datastore-preferences:1.1.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+    implementation 'com.google.android.play:review-ktx:2.0.1'
+    implementation 'androidx.glance:glance:1.0.0'
+    implementation 'androidx.glance:glance-appwidget:1.0.0'
+
     implementation platform('com.google.firebase:firebase-bom:33.1.2')
     implementation 'com.google.firebase:firebase-analytics-ktx'
     implementation 'com.google.firebase:firebase-crashlytics-ktx'
     implementation 'com.google.firebase:firebase-perf-ktx'
 
     implementation 'com.google.android.gms:play-services-ads:23.2.0'
+    implementation 'com.google.android.ump:user-messaging-platform:3.1.0'
 
     androidTestImplementation platform('androidx.compose:compose-bom:2024.06.00')
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
