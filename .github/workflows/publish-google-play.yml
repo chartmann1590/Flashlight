@@ -94,6 +94,9 @@ jobs:
             echo "keyPassword=${RELEASE_KEY_PASSWORD}"
           } > keystore.properties
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
       - name: Run release unit tests
         run: ./gradlew :app:testReleaseUnitTest
 
