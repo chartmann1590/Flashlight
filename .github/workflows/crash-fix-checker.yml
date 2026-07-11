@@ -1,0 +1,344 @@
+name: Crash Fix Checker
+
+on:
+  schedule:
+    - cron: '30 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+env:
+  FIREBASE_PROJECT_NUMBER: '172525138456'
+  FIREBASE_APP_ID: '1:172525138456:android:155c10ddbb9f76d287c96d'
+  FIREBASE_PROJECT_ID: 'flashlight-app-af20b'
+  ISSUE_LABELS: 'bug,crashlytics'
+  STALE_DAYS: '5'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Exchange Firebase refresh token for access token
+        id: auth
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          FIREBASE_OAUTH_CLIENT_ID: ${{ secrets.FIREBASE_OAUTH_CLIENT_ID }}
+          FIREBASE_OAUTH_CLIENT_SECRET: ${{ secrets.FIREBASE_OAUTH_CLIENT_SECRET }}
+        run: |
+          if [ -z "${FIREBASE_TOKEN}" ]; then
+            echo "FIREBASE_TOKEN secret is not set"; exit 1
+          fi
+          RESPONSE=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
+            --data-urlencode "client_id=${FIREBASE_OAUTH_CLIENT_ID}" \
+            --data-urlencode "client_secret=${FIREBASE_OAUTH_CLIENT_SECRET}" \
+            --data-urlencode "refresh_token=${FIREBASE_TOKEN}" \
+            --data-urlencode "grant_type=refresh_token")
+          ACCESS_TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+          if [ "$ACCESS_TOKEN" = "null" ] || [ -z "$ACCESS_TOKEN" ]; then
+            echo "Failed to obtain access token"; echo "$RESPONSE" | jq .; exit 1
+          fi
+          echo "::add-mask::${ACCESS_TOKEN}"
+          echo "access_token=$ACCESS_TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch Crashlytics top issues
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          curl -s \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            "https://firebasecrashlytics.googleapis.com/v1alpha/projects/${FIREBASE_PROJECT_NUMBER}/apps/${FIREBASE_APP_ID}/reports/topIssues?pageSize=100" \
+            > crashlytics_issues.json
+          cat crashlytics_issues.json | jq .
+          if cat crashlytics_issues.json | jq -e '.error' > /dev/null 2>&1; then
+            echo "Crashlytics API returned an error (see above)"; exit 1
+          fi
+
+      - name: Detect fixes and stale crashes
+        uses: actions/github-script@v7
+        env:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN || steps.auth.outputs.access_token }}
+          FIREBASE_PROJECT_NUMBER: ${{ env.FIREBASE_PROJECT_NUMBER }}
+          FIREBASE_APP_ID: ${{ env.FIREBASE_APP_ID }}
+          FIREBASE_PROJECT_ID: ${{ env.FIREBASE_PROJECT_ID }}
+          ISSUE_LABELS: ${{ env.ISSUE_LABELS }}
+          STALE_DAYS: ${{ env.STALE_DAYS }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const cp = require('child_process');
+
+            const { owner, repo } = context.repo;
+            const token = process.env.ACCESS_TOKEN;
+            const projectNumber = process.env.FIREBASE_PROJECT_NUMBER;
+            const appId = process.env.FIREBASE_APP_ID;
+            const projectId = process.env.FIREBASE_PROJECT_ID;
+            const watchedLabels = new Set((process.env.ISSUE_LABELS || 'bug,crashlytics').split(',').map(s => s.trim()).filter(Boolean));
+            const staleDays = parseInt(process.env.STALE_DAYS || '5', 10);
+            const today = new Date().toISOString().slice(0, 10);
+            const pendingMarker = '<!-- crash-fix-pending-review -->';
+            const activeMarkerRe = /<!--\s*crash-last-active:(\d{4}-\d{2}-\d{2})\s*-->/;
+
+            function parseFixCommits() {
+              const raw = cp.execSync(
+                'git log --since="90 days ago" --date=short --pretty=format:%x1e%H%x1f%h%x1f%ad%x1f%s --name-only',
+                { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 },
+              );
+              const fixRe = /(^fix[:\s-]|fixes?\s+(crash|bug|npe|nullpointer|exception|anr)|crash|fatal|anr|npe|nullpointer|runtimeexception|exception|illegalstate|torch|camera|flashlight|strobe|screen light|quick settings|tile|widget|interstitial|compose)/i;
+              return raw.split('\x1e').filter(Boolean).map(record => {
+                const lines = record.trim().split(/\r?\n/);
+                const [sha, shortSha, date, subject] = lines.shift().split('\x1f');
+                const files = lines.map(l => l.trim()).filter(Boolean);
+                return { sha, shortSha, date, subject, files };
+              }).filter(c => c.sha && fixRe.test(c.subject));
+            }
+
+            function parseCrashlyticsOpenIds() {
+              const data = JSON.parse(fs.readFileSync('crashlytics_issues.json', 'utf8'));
+              const rawGroups = data.groups || data.issues || [];
+              const openIds = new Set();
+              const eventCounts = new Map();
+              for (const entry of rawGroups) {
+                const inner = entry.issue || entry;
+                const id = inner.id || inner.issueId;
+                const state = (inner.state || 'OPEN').toUpperCase();
+                if (!id || state !== 'OPEN') continue;
+                const metric = entry.metrics?.[0] || {};
+                const events = parseInt(String(metric.eventsCount || inner.eventCount || '0'), 10);
+                openIds.add(id);
+                eventCounts.set(id, Number.isFinite(events) ? events : 0);
+              }
+              return { openIds, eventCounts };
+            }
+
+            function tableField(body, names) {
+              for (const name of names) {
+                const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const re = new RegExp(`\\|\\s*\\*\\*${escaped}\\*\\*\\s*\\|\\s*([^|]+?)\\s*\\|`, 'i');
+                const m = body.match(re);
+                if (m) return cleanup(m[1]);
+              }
+              return '';
+            }
+
+            function cleanup(value) {
+              return String(value || '')
+                .replace(/`/g, '')
+                .replace(/<[^>]+>/g, '')
+                .trim();
+            }
+
+            function crashlyticsId(issue) {
+              const body = issue.body || '';
+              return body.match(/<!--\s*crashlytics-id:([^\s]+)\s*-->/)?.[1]
+                || tableField(body, ['Crashlytics ID'])
+                || issue.labels.find(l => l.name?.startsWith('crashlytics:'))?.name.slice('crashlytics:'.length)
+                || '';
+            }
+
+            function issueSummary(issue) {
+              const body = issue.body || '';
+              return {
+                crashlyticsId: crashlyticsId(issue),
+                exception: tableField(body, ['Exception', 'Error', 'Crash', 'Summary']) || issue.title,
+                blameFrame: tableField(body, ['Blame frame', 'Affected class', 'Affected file', 'File', 'Class']),
+                errorType: tableField(body, ['Error type', 'Type']),
+                lastSeen: tableField(body, ['Last seen', 'Last seen version']),
+                events: tableField(body, ['Events (Last 7 days)', 'Events']),
+              };
+            }
+
+            function candidatePathsFromField(field) {
+              const value = cleanup(field);
+              const candidates = new Set();
+              if (!value) return candidates;
+              const directFile = value.match(/([\w./-]+\.(?:kt|java|xml|gradle|kts))/i)?.[1];
+              if (directFile) candidates.add(directFile.replace(/^\//, ''));
+              const classToken = value.match(/([a-zA-Z_][\w$]*(?:\.[a-zA-Z_][\w$]*)+)/)?.[1];
+              if (classToken) {
+                const normalized = classToken.replace(/\$.*$/, '').replace(/\.[a-z_][\w$]*\(.*/, '');
+                const rel = normalized.replace(/\./g, '/');
+                candidates.add(`app/src/main/java/${rel}.kt`);
+                candidates.add(`app/src/main/java/${rel}.java`);
+                candidates.add(`app/src/main/kotlin/${rel}.kt`);
+                candidates.add(`${rel}.kt`);
+                candidates.add(`${rel}.java`);
+              }
+              const simpleClass = value.match(/\b([A-Z][A-Za-z0-9_]+)\b/)?.[1];
+              if (simpleClass) {
+                candidates.add(`${simpleClass}.kt`);
+                candidates.add(`${simpleClass}.java`);
+              }
+              return candidates;
+            }
+
+            function commitTouchesIssue(commit, summary) {
+              const candidates = candidatePathsFromField(summary.blameFrame || summary.exception || '');
+              if (!candidates.size) return false;
+              return commit.files.some(file => {
+                const base = file.split('/').pop();
+                for (const candidate of candidates) {
+                  if (file === candidate || file.endsWith(`/${candidate}`) || base === candidate) return true;
+                }
+                return false;
+              });
+            }
+
+            async function issueComments(issueNumber) {
+              return github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: issueNumber,
+                per_page: 100,
+              });
+            }
+
+            function hasPendingReview(comments) {
+              return comments.some(comment => {
+                const body = (comment.body || '').toLowerCase();
+                return body.includes('pending store review')
+                  || body.includes('pending deploy review')
+                  || body.includes('pending [store/deploy] review')
+                  || body.includes(pendingMarker);
+              });
+            }
+
+            function buildFixComment(issue, summary, commits) {
+              const rows = commits.map(c => {
+                const url = `${context.serverUrl}/${owner}/${repo}/commit/${c.sha}`;
+                return `- [\`${c.shortSha}\`](${url}) ${c.date} - ${c.subject}`;
+              }).join('\n');
+              const files = [...new Set(commits.flatMap(c => c.files))].sort().map(f => `- \`${f}\``).join('\n');
+              return [
+                `A likely fix has been committed for this issue and is pending store/deploy review.`,
+                ``,
+                `### Crash summary`,
+                ``,
+                `| Field | Value |`,
+                `|-------|-------|`,
+                `| Issue | #${issue.number} ${issue.title} |`,
+                `| Crashlytics ID | ${summary.crashlyticsId || 'n/a'} |`,
+                `| Exception | ${summary.exception || 'n/a'} |`,
+                `| Blame frame / affected file | ${summary.blameFrame || 'n/a'} |`,
+                `| Error type | ${summary.errorType || 'n/a'} |`,
+                ``,
+                `### Matching fix commits`,
+                ``,
+                rows,
+                ``,
+                `### Files changed by matching commits`,
+                ``,
+                files || '- n/a',
+                ``,
+                `### Status`,
+                ``,
+                `| Stage | Status |`,
+                `|-------|--------|`,
+                `| Fix committed | complete |`,
+                `| Review/deploy pending | pending |`,
+                `| Live for users | not confirmed |`,
+                ``,
+                `This issue will be auto-closed once the fix is confirmed live and crash activity stays silent for ${staleDays} consecutive days.`,
+                ``,
+                pendingMarker,
+              ].join('\n');
+            }
+
+            function replaceActiveMarker(body, date) {
+              const marker = `<!-- crash-last-active:${date} -->`;
+              return activeMarkerRe.test(body || '') ? body.replace(activeMarkerRe, marker) : `${body || ''}\n${marker}`;
+            }
+
+            async function closeCrashlyticsUpstream(id) {
+              if (!id) return { ok: false, status: 'missing-id' };
+              const url = `https://firebasecrashlytics.googleapis.com/v1alpha/projects/${projectNumber}/apps/${appId}/issues/${encodeURIComponent(id)}?updateMask=state`;
+              const res = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ state: 'CLOSED' }),
+              });
+              if (res.ok) return { ok: true, status: res.status };
+              return { ok: false, status: res.status, body: await res.text() };
+            }
+
+            const fixCommits = parseFixCommits();
+            const { openIds: crashlyticsOpenIds, eventCounts } = parseCrashlyticsOpenIds();
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const issues = openIssues.filter(i => !i.pull_request && i.labels.some(l => watchedLabels.has(l.name)));
+
+            console.log(`Found ${fixCommits.length} candidate fix commits in the last 90 days`);
+            console.log(`Crashlytics returned ${crashlyticsOpenIds.size} open issues`);
+            console.log(`Found ${issues.length} open GitHub issues with labels: ${[...watchedLabels].join(', ')}`);
+
+            for (const issue of issues) {
+              const summary = issueSummary(issue);
+              const cid = summary.crashlyticsId;
+              let body = issue.body || '';
+
+              if (cid && crashlyticsOpenIds.has(cid)) {
+                body = replaceActiveMarker(body, today);
+                await github.rest.issues.update({ owner, repo, issue_number: issue.number, body });
+                console.log(`#${issue.number}: Crashlytics ${cid} is active (${eventCounts.get(cid) || 0} events); refreshed last-active marker`);
+              }
+
+              const activeMatch = body.match(activeMarkerRe);
+              if (cid && activeMatch && !crashlyticsOpenIds.has(cid)) {
+                const lastActive = activeMatch[1];
+                const silenceMs = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${lastActive}T00:00:00Z`);
+                const silentDays = Math.floor(silenceMs / 86400000);
+                if (silentDays >= staleDays) {
+                  const upstream = await closeCrashlyticsUpstream(cid);
+                  await github.rest.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: issue.number,
+                    body: [
+                      `Closing this issue after ${silentDays} consecutive days without new Crashlytics activity.`,
+                      ``,
+                      `- Crashlytics ID: \`${cid}\``,
+                      `- Last active marker: \`${lastActive}\``,
+                      `- Checked: \`${new Date().toISOString()}\``,
+                      `- Firebase upstream close: ${upstream.ok ? 'succeeded' : `attempted (${upstream.status})`}`,
+                    ].join('\n'),
+                  });
+                  await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
+                  console.log(`#${issue.number}: closed after ${silentDays} silent days; upstream close ${upstream.ok ? 'succeeded' : `returned ${upstream.status}`}`);
+                  continue;
+                }
+              }
+
+              const comments = await issueComments(issue.number);
+              if (hasPendingReview(comments)) {
+                console.log(`#${issue.number}: pending review marker/comment already present; skipped commit matching`);
+                continue;
+              }
+
+              const matches = fixCommits.filter(c => commitTouchesIssue(c, summary));
+              if (!matches.length) {
+                console.log(`#${issue.number}: no matching fix commits for "${summary.blameFrame || summary.exception || issue.title}"`);
+                continue;
+              }
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: buildFixComment(issue, summary, matches),
+              });
+              console.log(`#${issue.number}: posted pending review notice for ${matches.length} matching fix commits`);
+            }
