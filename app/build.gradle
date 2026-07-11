@@ -10,8 +10,9 @@ android {
     namespace 'com.charles.flashlight'
     compileSdk 35
 
-    // Play Store: versionCode must increase on every upload. CI uses GITHUB_RUN_NUMBER * 1000 +
-    // GITHUB_RUN_ATTEMPT so re-runs of the same workflow (same run number) still bump the code.
+    // Play Store: versionCode must increase on every upload. Release automation can set
+    // ANDROID_VERSION_CODE/ANDROID_VERSION_NAME explicitly; existing CI run-number behavior remains
+    // the fallback when those values are not present.
     def envIntOrNull = { String key ->
         def v = System.getenv(key)
         if (v == null) return null
@@ -43,7 +44,9 @@ android {
         }
     }()
     def playVersionCode = {
-        def explicit = envIntOrNull("CI_PLAY_VERSION_CODE")
+        def explicit = envIntOrNull("ANDROID_VERSION_CODE")
+        if (explicit != null) return explicit
+        explicit = envIntOrNull("CI_PLAY_VERSION_CODE")
         if (explicit != null) return explicit
         def runNum = envIntOrNull("GITHUB_RUN_NUMBER")
         if (runNum != null) {
@@ -60,7 +63,9 @@ android {
         return 2_100_001
     }()
     def playVersionName = {
-        def v = System.getenv("CI_VERSION_NAME")
+        def v = System.getenv("ANDROID_VERSION_NAME")
+        if (v != null && !v.trim().isEmpty()) return v.trim()
+        v = System.getenv("CI_VERSION_NAME")
         if (v != null && !v.trim().isEmpty()) return v.trim()
         def runNum = System.getenv("GITHUB_RUN_NUMBER")
         if (runNum != null && !runNum.trim().isEmpty()) {

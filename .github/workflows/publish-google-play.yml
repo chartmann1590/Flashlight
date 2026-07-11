@@ -1,0 +1,161 @@
+name: Publish Google Play
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_play_publish:
+        description: 'Type "publish" to publish this release to Google Play production.'
+        required: true
+        type: string
+      release_notes:
+        description: "Optional Google Play release notes."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish production release
+    runs-on: ubuntu-latest
+    env:
+      BASE_VERSION: "2.0"
+      PLAY_PACKAGE_NAME: com.charles.flashlight
+
+    steps:
+      - name: Confirm manual publish
+        run: |
+          if [ "${{ inputs.confirm_play_publish }}" != "publish" ]; then
+            echo "confirm_play_publish must be exactly 'publish'."
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compute release version
+        run: |
+          version_code="$(date -u +'%y%j%H%M')"
+          version_name="${BASE_VERSION}.$(date -u +'%Y%m%d.%H%M')"
+          {
+            echo "ANDROID_VERSION_CODE=${version_code}"
+            echo "ANDROID_VERSION_NAME=${version_name}"
+          } >> "$GITHUB_ENV"
+
+      - name: Materialize google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "${GOOGLE_SERVICES_JSON}" ]; then
+            echo "GOOGLE_SERVICES_JSON secret is required."
+            exit 1
+          fi
+          printf '%s' "${GOOGLE_SERVICES_JSON}" > app/google-services.json
+          python -m json.tool app/google-services.json > /dev/null
+
+      - name: Materialize release signing files
+        env:
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+          RELEASE_KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          keystore_b64="${RELEASE_KEYSTORE:-$RELEASE_KEYSTORE_B64}"
+          store_password="${RELEASE_KEYSTORE_PASSWORD:-$RELEASE_STORE_PASSWORD}"
+          if [ -z "${keystore_b64}" ] || [ -z "${store_password}" ] || [ -z "${RELEASE_KEY_ALIAS}" ] || [ -z "${RELEASE_KEY_PASSWORD}" ]; then
+            echo "Release signing secrets are required."
+            exit 1
+          fi
+          printf '%s' "${keystore_b64}" | base64 --decode > release-upload-key.jks
+          {
+            echo "storeFile=release-upload-key.jks"
+            echo "storePassword=${store_password}"
+            echo "keyAlias=${RELEASE_KEY_ALIAS}"
+            echo "keyPassword=${RELEASE_KEY_PASSWORD}"
+          } > keystore.properties
+
+      - name: Run release unit tests
+        run: ./gradlew :app:testReleaseUnitTest
+
+      - name: Run release lint
+        run: ./gradlew :app:lintRelease
+
+      - name: Build release app bundle
+        run: ./gradlew :app:bundleRelease
+
+      - name: Generate Play release notes
+        env:
+          RELEASE_NOTES_INPUT: ${{ inputs.release_notes }}
+        run: |
+          mkdir -p distribution/whatsnew
+          notes_file="distribution/whatsnew/whatsnew-en-US"
+          if [ -n "${RELEASE_NOTES_INPUT}" ]; then
+            printf '%s\n' "${RELEASE_NOTES_INPUT}" > "${notes_file}"
+          else
+            previous_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+            if [ -n "${previous_tag}" ]; then
+              git log --pretty='- %s' "${previous_tag}..HEAD" > "${notes_file}"
+            else
+              git log --pretty='- %s' -n 20 > "${notes_file}"
+            fi
+            if [ ! -s "${notes_file}" ]; then
+              if [ -f listing/whats_new.txt ]; then
+                cp listing/whats_new.txt "${notes_file}"
+              else
+                printf '%s\n' "Bug fixes and performance improvements." > "${notes_file}"
+              fi
+            fi
+          fi
+
+      - name: Locate release artifacts
+        id: artifacts
+        run: |
+          aab="$(find app/build/outputs/bundle/release -name '*.aab' -print -quit)"
+          if [ -z "${aab}" ]; then
+            echo "Release AAB was not generated."
+            exit 1
+          fi
+          echo "aab=${aab}" >> "$GITHUB_OUTPUT"
+          mapping="$(find app/build/outputs/mapping/release -name 'mapping.txt' -print -quit 2>/dev/null || true)"
+          echo "mapping_file=${mapping}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload app bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-play-release-aab
+          path: ${{ steps.artifacts.outputs.aab }}
+          if-no-files-found: error
+
+      - name: Verify Play service account secret
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON}" ]; then
+            echo "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret is required."
+            exit 1
+          fi
+
+      - name: Publish to Google Play production
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ env.PLAY_PACKAGE_NAME }}
+          releaseFiles: ${{ steps.artifacts.outputs.aab }}
+          tracks: production
+          status: completed
+          whatsNewDirectory: distribution/whatsnew
+          mappingFile: ${{ steps.artifacts.outputs.mapping_file }}
