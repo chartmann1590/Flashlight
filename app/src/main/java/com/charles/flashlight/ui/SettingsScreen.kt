@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.charles.flashlight.R
 import com.charles.flashlight.ads.HomeNativeAdSlot
 import com.charles.flashlight.data.SettingsRepository
+import com.charles.flashlight.ui.feedback.SupportFeedbackSection
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -196,6 +197,7 @@ fun SettingsScreen(
                     )
                 }
             }
+            SupportFeedbackSection()
             HomeNativeAdSlot(
                 adUnitId = nativeAdUnitId,
                 adsEnabled = monetizationActive,

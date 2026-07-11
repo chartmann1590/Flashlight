@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization'
     id 'com.google.gms.google-services'
     id 'com.google.firebase.crashlytics'
     id 'com.google.firebase.firebase-perf'
@@ -29,6 +30,23 @@ android {
     if (localPropsFile.exists()) {
         localPropsFile.withInputStream { localProps.load(it) }
     }
+    def configValue = { String propertyName, String envName, String fallback ->
+        def propertyValue = localProps.getProperty(propertyName)
+        if (propertyValue != null && !propertyValue.trim().isEmpty()) return propertyValue.trim()
+        if (project.hasProperty(propertyName)) {
+            def projectValue = project.property(propertyName)?.toString()
+            if (projectValue != null && !projectValue.trim().isEmpty()) return projectValue.trim()
+        }
+        def envValue = System.getenv(envName)
+        if (envValue != null && !envValue.trim().isEmpty()) return envValue.trim()
+        return fallback
+    }
+    def buildConfigString = { String value ->
+        return "\"" + (value ?: "").replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+    }
+    def githubApiToken = configValue("github.api.token", "GH_API_TOKEN", "")
+    def githubRepoOwner = configValue("github.repo.owner", "GH_REPO_OWNER", "")
+    def githubRepoName = configValue("github.repo.name", "GH_REPO_NAME", "")
     def keystorePropsFile = rootProject.file("keystore.properties")
     def keystoreProps = new Properties()
     if (keystorePropsFile.exists()) {
@@ -83,6 +101,10 @@ android {
         versionCode playVersionCode
         versionName playVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "GITHUB_API_TOKEN", buildConfigString(githubApiToken)
+        buildConfigField "String", "GITHUB_REPO_OWNER", buildConfigString(githubRepoOwner)
+        buildConfigField "String", "GITHUB_REPO_NAME", buildConfigString(githubRepoName)
+        buildConfigField "String", "FEEDBACK_ASSETS_DIR", buildConfigString("feedback-assets")
     }
 
     def releaseStoreFileRaw = System.getenv("RELEASE_STORE_FILE") ?: keystoreProps.getProperty("storeFile")
@@ -157,6 +179,11 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
     implementation 'androidx.datastore:datastore-preferences:1.1.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.google.android.play:review-ktx:2.0.1'
     implementation 'androidx.glance:glance:1.0.0'
     implementation 'androidx.glance:glance-appwidget:1.0.0'
