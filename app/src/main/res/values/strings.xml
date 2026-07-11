@@ -33,6 +33,7 @@
     <string name="widget_title">Flashlight</string>
     <string name="widget_toggle">Open / toggle</string>
     <string name="widget_description">Open the app or toggle the torch from your home screen.</string>
+    <string name="quick_settings_tile_label">Flashlight</string>
     <string name="home_tagline_short">Simple torch, screen light, and SOS when you need them.</string>
     <string name="menu_more">More options</string>
     <string name="status_mode_steady">Steady beam</string>

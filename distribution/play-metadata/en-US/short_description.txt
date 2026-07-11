@@ -1,0 +1,1 @@
+Fast torch, screen light, SOS, shake toggle, widget, and quick settings tile.

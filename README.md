@@ -8,9 +8,10 @@
 - **Screen light** — full-screen panel light with brightness and color presets when you do not want the camera LED.
 - **Settings** — shake-to-toggle, haptics, sound, strobe speed, and auto-off timer.
 - **Overflow menu** — About, website, privacy, and Buy me a coffee (no clutter on the main screen).
+- **Quick Settings tile** — toggle the torch from Android system controls.
 - **Home-screen widget** — open the app or toggle the torch from a widget.
 
-A short ad may appear when you turn the light on; that helps keep the app free to build and ship.
+The app includes ads to keep it free, placed away from the main torch button so the light stays quick to use.
 
 ## Screenshots
 

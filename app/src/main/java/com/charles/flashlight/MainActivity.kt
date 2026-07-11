@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.charles.flashlight.ads.AdIds
 import com.charles.flashlight.ads.ConsentManager
-import com.charles.flashlight.ads.InterstitialController
 import com.charles.flashlight.data.SettingsRepository
 import com.charles.flashlight.navigation.FlashlightNavHost
 import com.charles.flashlight.review.InAppReviewHelper
@@ -30,12 +29,10 @@ import kotlin.coroutines.suspendCoroutine
 class MainActivity : ComponentActivity() {
 
     private val torchViewModel: TorchViewModel by viewModels()
-    private lateinit var interstitial: InterstitialController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        interstitial = InterstitialController(this)
 
         setContent {
             FlashlightTheme {
@@ -47,7 +44,6 @@ class MainActivity : ComponentActivity() {
                     if (BuildConfig.ADS_ENABLED) {
                         suspendCoroutine { cont ->
                             ConsentManager.gatherConsent(this@MainActivity) {
-                                interstitial.preload()
                                 monetizationReady = true
                                 cont.resume(Unit)
                             }
@@ -64,9 +60,6 @@ class MainActivity : ComponentActivity() {
                     if (intent?.getBooleanExtra(EXTRA_FROM_WIDGET_TOGGLE, false) == true) {
                         intent.removeExtra(EXTRA_FROM_WIDGET_TOGGLE)
                         torchViewModel.toggle()
-                        if (BuildConfig.ADS_ENABLED) {
-                            interstitial.maybeShowOnTorchToggle(this@MainActivity)
-                        }
                     }
                 }
 
@@ -77,11 +70,6 @@ class MainActivity : ComponentActivity() {
                     monetizationActive = BuildConfig.ADS_ENABLED && monetizationReady,
                     nativeAdUnitId = AdIds.nativeAdvanced,
                     bannerAdUnitId = AdIds.adaptiveBannerId(this@MainActivity),
-                    onTorchToggleForAds = {
-                        if (BuildConfig.ADS_ENABLED) {
-                            interstitial.maybeShowOnTorchToggle(this@MainActivity)
-                        }
-                    },
                     onOpenWebsite = {
                         startActivity(
                             Intent(
@@ -121,9 +109,6 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra(EXTRA_FROM_WIDGET_TOGGLE, false)) {
             intent.removeExtra(EXTRA_FROM_WIDGET_TOGGLE)
             torchViewModel.toggle()
-            if (BuildConfig.ADS_ENABLED) {
-                interstitial.maybeShowOnTorchToggle(this)
-            }
         }
     }
 

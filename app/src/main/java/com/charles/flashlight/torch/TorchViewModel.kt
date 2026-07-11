@@ -1,12 +1,11 @@
 package com.charles.flashlight.torch
 
 import android.app.Application
-import android.hardware.camera2.CameraAccessException
-import android.hardware.camera2.CameraManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.charles.flashlight.data.SettingsRepository
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,27 +16,25 @@ import kotlinx.coroutines.launch
 
 class TorchViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val cameraManager = application.getSystemService(CameraManager::class.java)!!
-    private val cameraId: String? = runCatching { cameraManager.cameraIdList.firstOrNull() }.getOrNull()
     private val settingsRepository = SettingsRepository(application)
 
     private val _mode = MutableStateFlow(TorchMode.STEADY)
     val mode: StateFlow<TorchMode> = _mode.asStateFlow()
 
-    private val _isActive = MutableStateFlow(false)
-    val isActive: StateFlow<Boolean> = _isActive.asStateFlow()
+    val isActive: StateFlow<Boolean> = TorchController.isActive
 
     private val strobeHalfPeriodMs = MutableStateFlow(SettingsRepository.DEFAULT_STROBE_HALF_MS)
 
     private var patternJob: Job? = null
 
     init {
+        TorchController.initialize(application)
         viewModelScope.launch {
             settingsRepository.strobeHalfPeriodMs
                 .distinctUntilChanged()
                 .collect { ms ->
                     strobeHalfPeriodMs.value = ms
-                    if (_mode.value == TorchMode.STROBE && _isActive.value) {
+                    if (_mode.value == TorchMode.STROBE && TorchController.isActive.value) {
                         restartPattern()
                     }
                 }
@@ -46,41 +43,46 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setMode(mode: TorchMode) {
         _mode.value = mode
-        if (_isActive.value) {
+        if (TorchController.isActive.value) {
             restartPattern()
         }
     }
 
     fun toggle() {
-        val next = !_isActive.value
-        _isActive.value = next
+        val next = !TorchController.isActive.value
         patternJob?.cancel()
         patternJob = null
         if (!next) {
-            setTorch(false)
+            setSteady(false)
             return
         }
+        if (!TorchController.hasTorch(getApplication())) return
         when (_mode.value) {
-            TorchMode.STEADY -> setTorch(true)
-            TorchMode.STROBE -> startStrobe()
-            TorchMode.SOS -> startSos()
+            TorchMode.STEADY -> setSteady(true)
+            TorchMode.STROBE -> {
+                TorchController.setActive(true)
+                startStrobe()
+            }
+            TorchMode.SOS -> {
+                TorchController.setActive(true)
+                startSos()
+            }
         }
     }
 
     fun forceOff() {
         patternJob?.cancel()
         patternJob = null
-        _isActive.value = false
-        setTorch(false)
+        setSteady(false)
     }
 
     private fun restartPattern() {
         patternJob?.cancel()
         patternJob = null
-        setTorch(false)
-        if (!_isActive.value) return
+        setLight(false)
+        if (!TorchController.isActive.value) return
         when (_mode.value) {
-            TorchMode.STEADY -> setTorch(true)
+            TorchMode.STEADY -> setSteady(true)
             TorchMode.STROBE -> startStrobe()
             TorchMode.SOS -> startSos()
         }
@@ -88,11 +90,11 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun startStrobe() {
         patternJob = viewModelScope.launch {
-            while (isActive && _isActive.value) {
+            while (currentCoroutineContext().isActive && TorchController.isActive.value) {
                 val half = strobeHalfPeriodMs.value.toLong().coerceAtLeast(1L)
-                setTorch(true)
+                setLight(true)
                 delay(half)
-                setTorch(false)
+                setLight(false)
                 delay(half)
             }
         }
@@ -100,7 +102,7 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun startSos() {
         patternJob = viewModelScope.launch {
-            while (isActive && _isActive.value) {
+            while (currentCoroutineContext().isActive && TorchController.isActive.value) {
                 for (i in 0 until 3) dot()
                 delay(LETTER_GAP_MS)
                 for (i in 0 until 3) dash()
@@ -112,32 +114,32 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun dot() {
-        if (!_isActive.value) return
-        setTorch(true)
+        if (!TorchController.isActive.value) return
+        setLight(true)
         delay(DOT_MS)
-        setTorch(false)
+        setLight(false)
         delay(SYMBOL_GAP_MS)
     }
 
     private suspend fun dash() {
-        if (!_isActive.value) return
-        setTorch(true)
+        if (!TorchController.isActive.value) return
+        setLight(true)
         delay(DASH_MS)
-        setTorch(false)
+        setLight(false)
         delay(SYMBOL_GAP_MS)
     }
 
-    private fun setTorch(on: Boolean) {
-        val id = cameraId ?: return
-        try {
-            cameraManager.setTorchMode(id, on)
-        } catch (_: CameraAccessException) {
-        }
+    private fun setSteady(on: Boolean) {
+        TorchController.setSteady(getApplication(), on)
+    }
+
+    private fun setLight(on: Boolean) {
+        TorchController.setLight(getApplication(), on)
     }
 
     override fun onCleared() {
         patternJob?.cancel()
-        setTorch(false)
+        setSteady(false)
         super.onCleared()
     }
 

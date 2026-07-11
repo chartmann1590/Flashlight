@@ -19,7 +19,6 @@ fun FlashlightNavHost(
     monetizationActive: Boolean,
     nativeAdUnitId: String,
     bannerAdUnitId: String,
-    onTorchToggleForAds: () -> Unit,
     onOpenWebsite: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenCoffee: () -> Unit,
@@ -38,7 +37,6 @@ fun FlashlightNavHost(
                 monetizationActive = monetizationActive,
                 nativeAdUnitId = nativeAdUnitId,
                 bannerAdUnitId = bannerAdUnitId,
-                onTorchToggleForAds = onTorchToggleForAds,
                 onNavigateSettings = { navController.navigate(Routes.SETTINGS) },
                 onNavigateAbout = { navController.navigate(Routes.ABOUT) },
                 onOpenWebsite = onOpenWebsite,
@@ -50,6 +48,8 @@ fun FlashlightNavHost(
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 repository = settingsRepository,
+                monetizationActive = monetizationActive,
+                nativeAdUnitId = nativeAdUnitId,
                 onBack = { navController.popBackStack() }
             )
         }

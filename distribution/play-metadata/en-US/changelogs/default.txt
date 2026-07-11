@@ -1,0 +1,1 @@
+Added a Quick Settings torch tile for faster access. Improved ad behavior to keep the flashlight experience cleaner. Updated store listing text for the current feature set.

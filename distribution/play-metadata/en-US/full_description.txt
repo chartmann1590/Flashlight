@@ -1,0 +1,21 @@
+Flashlight is a fast, simple torch app for Android. Open it when you need light right now, or add the Quick Settings tile and home-screen widget for one-tap access.
+
+Core features:
+
+- Instant LED torch with a large, clear toggle
+- Quick Settings tile for faster access from Android system controls
+- Home-screen widget to open or toggle the torch
+- Screen light mode with brightness and warm, neutral, cool, and night-red colors
+- Steady, strobe, and SOS torch modes
+- Shake-to-toggle option
+- Auto-off timer
+- Haptic and sound feedback options
+
+Built for practical use:
+
+- Clean interface that stays readable in the dark
+- Camera permission is used only to control the LED torch
+- No account required
+- Privacy policy included in the app and store listing
+
+Flashlight includes ads to keep the app free. Ads are placed away from the main torch button so the light stays quick to use.

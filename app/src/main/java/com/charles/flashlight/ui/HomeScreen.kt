@@ -86,7 +86,6 @@ fun HomeScreen(
     monetizationActive: Boolean,
     nativeAdUnitId: String,
     bannerAdUnitId: String,
-    onTorchToggleForAds: () -> Unit,
     onNavigateSettings: () -> Unit,
     onNavigateAbout: () -> Unit,
     onOpenWebsite: () -> Unit,
@@ -312,9 +311,6 @@ fun HomeScreen(
                                     ToneGenerator(AudioManager.STREAM_NOTIFICATION, 30)
                                         .startTone(ToneGenerator.TONE_PROP_BEEP, 60)
                                 }
-                            }
-                            if (monetizationActive) {
-                                onTorchToggleForAds()
                             }
                         },
                         modifier = Modifier

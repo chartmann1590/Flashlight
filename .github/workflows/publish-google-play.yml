@@ -45,6 +45,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
       - name: Compute release version
         run: |
           version_code="$(date -u +'%y%j%H%M')"
@@ -148,6 +154,22 @@ jobs:
             echo "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret is required."
             exit 1
           fi
+
+      - name: Publish Play Store listing metadata
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          trap 'rm -f play-service-account.json' EXIT
+          printf '%s' "${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON}" > play-service-account.json
+          bundle exec fastlane supply \
+            --json_key play-service-account.json \
+            --package_name "${PLAY_PACKAGE_NAME}" \
+            --metadata_path distribution/play-metadata \
+            --skip_upload_apk true \
+            --skip_upload_aab true \
+            --skip_upload_changelogs true \
+            --skip_upload_images true \
+            --skip_upload_screenshots true
 
       - name: Publish to Google Play production
         uses: r0adkll/upload-google-play@v1.1.5

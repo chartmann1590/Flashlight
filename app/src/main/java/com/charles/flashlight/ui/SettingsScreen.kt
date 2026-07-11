@@ -35,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.charles.flashlight.R
+import com.charles.flashlight.ads.HomeNativeAdSlot
 import com.charles.flashlight.data.SettingsRepository
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     repository: SettingsRepository,
+    monetizationActive: Boolean,
+    nativeAdUnitId: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -193,6 +196,13 @@ fun SettingsScreen(
                     )
                 }
             }
+            HomeNativeAdSlot(
+                adUnitId = nativeAdUnitId,
+                adsEnabled = monetizationActive,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            )
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
