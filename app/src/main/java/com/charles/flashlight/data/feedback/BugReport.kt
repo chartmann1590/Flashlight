@@ -15,8 +15,7 @@ data class BugReport(
 @Serializable
 data class CreateIssueRequest(
     val title: String,
-    val body: String,
-    val labels: List<String> = listOf("bug")
+    val body: String
 )
 
 @Serializable
@@ -49,8 +48,8 @@ data class PostCommentRequest(
 
 @Serializable
 data class UploadAssetRequest(
-    val message: String,
-    val content: String
+    val filename: String,
+    val contentBase64: String
 )
 
 @Serializable

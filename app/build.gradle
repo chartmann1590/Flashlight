@@ -44,9 +44,6 @@ android {
     def buildConfigString = { String value ->
         return "\"" + (value ?: "").replace("\\", "\\\\").replace("\"", "\\\"") + "\""
     }
-    def githubApiToken = configValue("github.api.token", "GH_API_TOKEN", "")
-    def githubRepoOwner = configValue("github.repo.owner", "GH_REPO_OWNER", "")
-    def githubRepoName = configValue("github.repo.name", "GH_REPO_NAME", "")
     def keystorePropsFile = rootProject.file("keystore.properties")
     def keystoreProps = new Properties()
     if (keystorePropsFile.exists()) {
@@ -101,10 +98,6 @@ android {
         versionCode playVersionCode
         versionName playVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField "String", "GITHUB_API_TOKEN", buildConfigString(githubApiToken)
-        buildConfigField "String", "GITHUB_REPO_OWNER", buildConfigString(githubRepoOwner)
-        buildConfigField "String", "GITHUB_REPO_NAME", buildConfigString(githubRepoName)
-        buildConfigField "String", "FEEDBACK_ASSETS_DIR", buildConfigString("feedback-assets")
     }
 
     def releaseStoreFileRaw = System.getenv("RELEASE_STORE_FILE") ?: keystoreProps.getProperty("storeFile")

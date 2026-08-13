@@ -6,12 +6,9 @@ import retrofit2.Response
 
 class FeedbackService(
     private val context: Context,
-    private val api: GithubApi = GithubClient.api,
-    private val config: GithubConfig = GithubClient.config
+    private val api: GithubApi = GithubClient.api
 ) {
-    fun configError(): String? {
-        return if (config.isComplete) null else "Feedback is not configured. Missing: ${config.missingMessage}."
-    }
+    fun configError(): String? = null
 
     suspend fun createIssue(
         title: String,
@@ -21,24 +18,19 @@ class FeedbackService(
         includeDiagnostics: Boolean,
         attachmentUri: Uri?
     ): Result<GithubIssue> = runCatching {
-        requireConfigured()
-        val attachmentUrl = uploadAttachmentIfPresent(attachmentUri, "feedback attachment")
+        val attachmentUrl = uploadAttachmentIfPresent(attachmentUri)
         val body = buildIssueBody(description, name, email, includeDiagnostics, attachmentUrl)
         api.createIssue(
-            owner = config.owner,
-            repo = config.repo,
             request = CreateIssueRequest(title = "[Feedback] $title", body = body)
         ).bodyOrThrow("create issue")
     }
 
     suspend fun refreshIssue(number: Int): Result<GithubIssue> = runCatching {
-        requireConfigured()
-        api.getIssue(config.owner, config.repo, number).bodyOrThrow("load issue")
+        api.getIssue(number).bodyOrThrow("load issue")
     }
 
     suspend fun comments(number: Int): Result<List<GithubComment>> = runCatching {
-        requireConfigured()
-        api.getComments(config.owner, config.repo, number).bodyOrThrow("load comments")
+        api.getComments(number).bodyOrThrow("load comments")
     }
 
     suspend fun postComment(
@@ -46,25 +38,20 @@ class FeedbackService(
         reply: String,
         attachmentUri: Uri?
     ): Result<GithubComment> = runCatching {
-        requireConfigured()
-        val attachmentUrl = uploadAttachmentIfPresent(attachmentUri, "feedback comment attachment")
+        val attachmentUrl = uploadAttachmentIfPresent(attachmentUri)
         val body = buildCommentBody(reply, attachmentUrl)
-        api.postComment(config.owner, config.repo, number, PostCommentRequest(body)).bodyOrThrow("post comment")
+        api.postComment(number, PostCommentRequest(body)).bodyOrThrow("post comment")
     }
 
-    private suspend fun uploadAttachmentIfPresent(uri: Uri?, message: String): String? {
+    private suspend fun uploadAttachmentIfPresent(uri: Uri?): String? {
         if (uri == null) return null
         val extension = extensionForUri(context, uri)
         val filename = uniqueFeedbackFilename(extension)
         val content = uriToBase64(context, uri)
         val response = api.uploadAsset(
-            owner = config.owner,
-            repo = config.repo,
-            assetDir = config.assetDir,
-            filename = filename,
             request = UploadAssetRequest(
-                message = "$message $filename",
-                content = content
+                filename = filename,
+                contentBase64 = content
             )
         ).bodyOrThrow("upload attachment")
         return response.content?.downloadUrl ?: response.content?.htmlUrl
@@ -108,11 +95,6 @@ class FeedbackService(
             appendLine()
             appendLine("![Screenshot]($attachmentUrl)")
         }
-    }
-
-    private fun requireConfigured() {
-        val error = configError()
-        if (error != null) throw IllegalStateException(error)
     }
 
     private fun <T> Response<T>.bodyOrThrow(action: String): T {
