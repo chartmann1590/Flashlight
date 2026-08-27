@@ -206,6 +206,9 @@ fun SettingsScreen(
                     .padding(bottom = 8.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
+
+            MoreAppsSection()
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
