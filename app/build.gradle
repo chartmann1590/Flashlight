@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace 'com.charles.flashlight'
-    compileSdk 35
+    compileSdk 36
 
     // Play Store: versionCode must increase on every upload. Release automation can set
     // ANDROID_VERSION_CODE/ANDROID_VERSION_NAME explicitly; existing CI run-number behavior remains
@@ -94,7 +94,7 @@ android {
     defaultConfig {
         applicationId "com.charles.flashlight"
         minSdk 24
-        targetSdk 35
+        targetSdk 36
         versionCode playVersionCode
         versionName playVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
