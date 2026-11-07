@@ -221,7 +221,8 @@ fun HomeScreen(
                                 },
                                 modifier = Modifier.testTag("e2e_privacy_policy")
                             )
-                            DropdownMenuItem(
+                            // Amazon Appstore build: no outside payment/tip links.
+                            if (com.charles.flashlight.BuildConfig.STORE != "amazon") DropdownMenuItem(
                                 text = { Text(stringResource(R.string.buy_me_a_coffee)) },
                                 onClick = {
                                     menuExpanded = false

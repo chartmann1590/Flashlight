@@ -120,8 +120,9 @@ fun AboutScreen(
                             .fillMaxWidth()
                             .clickable { onOpenWebsite() }
                     )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    ListItem(
+                    // Amazon Appstore build: no outside payment/tip links.
+                    if (com.charles.flashlight.BuildConfig.STORE != "amazon") HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    if (com.charles.flashlight.BuildConfig.STORE != "amazon") ListItem(
                         headlineContent = { Text(stringResource(R.string.buy_me_a_coffee)) },
                         leadingContent = {
                             Icon(Icons.Outlined.LocalCafe, contentDescription = null)

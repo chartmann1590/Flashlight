@@ -1,6 +1,7 @@
 launch
 wait 15
 shot 01-launch
+sh dumpsys package com.charles.flashlight | grep -i -A4 reqFeatures
 taploop (?i)^(allow|ok|got it|while using the app|only this time|continue|accept|agree|consent)$
 adclose
 wait 3
@@ -10,10 +11,8 @@ wait 3
 shot 03-turn-on-no-flash
 tap (?i)^sos$
 wait 2
-tap (?i)^strobe$
-wait 2
+shot 04-sos
 tap (?i)^steady$
-shot 04-modes
 tap (?i)^screen light$
 wait 4
 shot 05-screen-light
@@ -23,6 +22,8 @@ adclose
 tap (?i)^more options$
 wait 2
 shot 06-menu
+back
+wait 2
 tap (?i)^settings$
 wait 4
 adclose
@@ -33,12 +34,14 @@ shot 08-settings-bottom
 scrollto (?i)other apps by
 shot 09-more-apps
 back
-wait 2
+wait 3
 tap (?i)^more options$
 wait 2
 tap (?i)^about$
 wait 3
 shot 10-about
+swipeup
+shot 11-about-bottom
 back
 wait 2
-shot 11-back-home
+shot 12-back-home
