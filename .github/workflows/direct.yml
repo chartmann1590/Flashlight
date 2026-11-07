@@ -1,0 +1,89 @@
+name: Direct download build + emulator test
+# Direct-download build of this app (GitHub Releases / charleshartmann.com): same code, built with store=direct
+# (no Google Play links, no Play in-app review prompt, nothing sold through Google Play). Emulator with Google APIs (a normal phone).
+# Branch builds only make a DRAFT release; nothing is uploaded to any store.
+on:
+  push:
+    branches: [direct-stripe]
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: direct-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  direct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+        cache: gradle
+    - name: Decode release keystore
+      run: echo "${{ secrets.RELEASE_KEYSTORE_B64 }}" | base64 --decode > release-key.jks
+    - name: Build direct APK (store=direct)
+      env:
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        RELEASE_STORE_FILE: ${{ github.workspace }}/release-key.jks
+        RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+        RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      run: |
+        set -o pipefail
+        chmod +x gradlew
+        ok=0
+        for attempt in 1 2 3; do
+          if ./gradlew --no-daemon assembleRelease -Pstore=direct --stacktrace 2>&1 | tee -a /tmp/dsk-build.log; then ok=1; break; fi
+          echo "Gradle attempt ${attempt} failed (often transient Maven Central 403). Retrying in 25s..."
+          sleep 25
+        done
+        [ "$ok" = 1 ] || { echo "Gradle failed after 3 attempts."; exit 1; }
+        cd "$GITHUB_WORKSPACE"
+        mkdir -p dsk-apk
+        A=$(find . -path "*/build/outputs/apk/*release*/*.apk" ! -name "*unsigned*" | head -1); [ -z "$A" ] && A=$(find . -path "*/build/outputs/apk/*release*/*.apk" | head -1)
+        cp "$A" dsk-apk/Flashlight-direct-release.apk
+        ls -la dsk-apk
+        BT=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
+        $BT/apksigner verify --print-certs dsk-apk/Flashlight-direct-release.apk | head -3 || true
+        $BT/aapt2 dump badging dsk-apk/Flashlight-direct-release.apk | grep -E "^package|uses-feature|flash" || true
+        echo "--- Play Store URL strings left in the direct release dex:"; unzip -p dsk-apk/Flashlight-direct-release.apk "classes*.dex" | strings | grep -E "play\.google\.com/store|market://" | head || true
+    - name: Ship build log tail to the private drop (on failure)
+      if: failure()
+      env:
+        DROP_KEY: ${{ secrets.DROP_KEY }}
+      run: |
+        tail -c 60000 /tmp/dsk-build.log 2>/dev/null | curl -s -m 60 -X PUT -H "X-Key: $DROP_KEY" --data-binary @- "https://hs-apk-drop.charles-h-hartmann1.workers.dev/c/dsklog_${{ github.event.repository.name }}_r${{ github.run_number }}/0" || true
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+    - name: Emulator test (Google APIs image, like a normal phone)
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 30
+        profile: pixel_5
+        target: google_apis
+        arch: x86_64
+        ram-size: 3072M
+        disk-size: 4096M
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disable-animations: true
+        script: bash .github/direct/run-tests.sh
+    - name: Upload test results to Tab's private drop
+      if: always()
+      env:
+        DROP_KEY: ${{ secrets.DROP_KEY }}
+      run: |
+        bash .github/direct/direct-upload.sh /tmp/dsk-out dsk_Flashlight_r${{ github.run_number }}
+    - name: Draft release with the direct APK (not published)
+      if: success()
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: direct-${{ github.run_number }}
+        name: Direct build ${{ github.run_number }} (${{ github.sha }})
+        draft: true
+        files: dsk-apk/Flashlight-direct-release.apk

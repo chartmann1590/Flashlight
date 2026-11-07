@@ -98,6 +98,9 @@ android {
         versionCode playVersionCode
         versionName playVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Store this build is for: "play" (default) or "direct" (./gradlew ... -Pstore=direct).
+        // Direct (GitHub / charleshartmann.com) builds drop Google Play links and the Play in-app review prompt.
+        buildConfigField "String", "STORE", "\"${project.findProperty('store') ?: 'play'}\""
     }
 
     def releaseStoreFileRaw = System.getenv("RELEASE_STORE_FILE") ?: keystoreProps.getProperty("storeFile")
