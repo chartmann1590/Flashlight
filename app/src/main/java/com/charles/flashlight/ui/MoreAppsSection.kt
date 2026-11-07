@@ -80,7 +80,7 @@ fun MoreAppsSection() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        val url = "https://play.google.com/store/apps/details?id=${app.packageName}"
+                        val url = if (com.charles.flashlight.BuildConfig.STORE == "amazon") "https://www.amazon.com/gp/mas/dl/android?p=${app.packageName}" else "https://play.google.com/store/apps/details?id=${app.packageName}"
                         try {
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                         } catch (_: ActivityNotFoundException) {}

@@ -5,6 +5,7 @@ import com.google.android.play.core.review.ReviewManagerFactory
 
 object InAppReviewHelper {
     fun requestReviewIfEligible(activity: Activity, launchCount: Int) {
+        if (com.charles.flashlight.BuildConfig.STORE == "amazon") return // Amazon Appstore build: no Play review prompt
         if (launchCount != 5 && launchCount != 15) return
         val manager = ReviewManagerFactory.create(activity)
         val flow = manager.requestReviewFlow()

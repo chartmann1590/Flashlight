@@ -98,6 +98,11 @@ android {
         versionCode playVersionCode
         versionName playVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Store this build is for: "play" (default) or "amazon" (./gradlew ... -Pstore=amazon).
+        // Amazon builds drop Google Play links and the Play in-app review prompt.
+        buildConfigField "String", "STORE", "\"${project.findProperty('store') ?: 'play'}\""
+        // Fire tablets have no camera flash: the amazon build must not require it (Screen Light still works there).
+        manifestPlaceholders += [flashRequired: (project.findProperty('store') == 'amazon') ? 'false' : 'true']
     }
 
     def releaseStoreFileRaw = System.getenv("RELEASE_STORE_FILE") ?: keystoreProps.getProperty("storeFile")
