@@ -12,7 +12,7 @@ object AdIds {
         if (BuildConfig.DEBUG) {
             GOOGLE_NATIVE_TEST
         } else {
-            "ca-app-pub-8382831211800454/6282727530"
+            "ca-app-pub-8382831211800454/2028105295"
         }
 
     /** Adaptive banner: always returns a unit id for loading (test in debug; release string or test fallback). */
