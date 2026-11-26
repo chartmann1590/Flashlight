@@ -115,16 +115,17 @@
 
   <main class="wrap">
     <h1>Privacy Policy</h1>
-    <p class="effective">Effective date: <strong>April 30, 2026</strong></p>
+    <p class="effective">Effective date: <strong>November 25, 2026</strong></p>
 
     <p>This policy describes how the <strong>Flashlight</strong> Android application (“the App,” package <code style="background:rgba(255,255,255,.08);padding:0 .35rem;border-radius:.35rem;">com.charles.flashlight</code>) handles information when you use it. The App is distributed by the developer behind the <a href="https://github.com/chartmann1590/Flashlight">Flashlight</a> open-source project on GitHub.</p>
 
     <h2>Summary</h2>
-    <p>The App turns your device’s camera LED on and off. It does not require an account. It uses standard mobile services (Google Firebase and Google AdMob) that may collect technical and usage-related data as described below. Torch control happens on your device; the App does not upload your photos or video recordings.</p>
+    <p>The App turns your device’s camera LED on and off. It does not require an account. It uses standard mobile services (Google Firebase and Google AdMob) that may collect technical and usage-related data as described below. Torch control happens entirely on your device. The only content that ever leaves your device is what you choose to send in a bug report, as described under “Bug reports and feedback” below.</p>
 
     <h2>Information the App may access or generate</h2>
     <ul>
-      <li><strong>Camera / torch.</strong> The App uses the camera permission to control the LED flashlight. It does not capture, store, or transmit photos or video from your camera to the developer.</li>
+      <li><strong>Torch (no camera permission).</strong> The App does <em>not</em> request the camera permission. It controls the LED flashlight directly through Android’s torch mode, and it never captures photos or video. The only image that can leave your device is a screenshot you deliberately attach to a bug report (see below).</li>
+      <li><strong>Battery level.</strong> The App reads your battery percentage on-device to display it and to warn you before torch use on a low battery. This is never transmitted.</li>
       <li><strong>Network connectivity.</strong> The App uses the internet to load ads and to send analytics, crash, and performance data as configured through Google’s SDKs (see Third parties).</li>
       <li><strong>Device and app diagnostics.</strong> Through integrated SDKs, Google may collect identifiers and technical information such as device model, OS version, app version, and events related to stability and usage. This supports crash reporting, product analytics, and advertising.</li>
     </ul>
@@ -138,11 +139,23 @@
       <li>Comply with applicable law and enforce acceptable use.</li>
     </ul>
 
+    <h2>Bug reports and feedback (only when you submit one)</h2>
+    <p>The App includes an optional “Report a Problem” form. <strong>Nothing in this section is collected unless you open the form and press submit.</strong> When you do, your report is relayed through a Cloudflare Worker to <a href="https://github.com/chartmann1590/Flashlight/issues">GitHub Issues</a> in the App’s public repository. <strong>GitHub Issues are publicly visible</strong> — anyone can read your report, so do not include passwords or other sensitive information.</p>
+    <p>A submitted report may contain:</p>
+    <ul>
+      <li><strong>Your description</strong> of the problem (always included).</li>
+      <li><strong>Name and email address</strong> — only if you fill in those optional fields, so we can follow up with you.</li>
+      <li><strong>Diagnostics</strong> — only if you tick the “Include phone/app diagnostics” box (it is unticked by default). Diagnostics include: device brand and model, manufacturer, Android version and API level, app name, package and version, locale, time zone, free/total storage, free/total memory, and a timestamp.</li>
+      <li><strong>A screenshot</strong> — only if you attach one using the system photo picker. The App has no access to your photo library beyond the single image you pick.</li>
+    </ul>
+    <p>Reports are kept for as long as the GitHub issue exists, so the problem can be tracked and fixed. To have a report you submitted removed, email <a href="mailto:me@charleshartmann.com">me@charleshartmann.com</a> with the issue link, or comment on the issue itself, and we will delete it.</p>
+
     <h2>Third-party services</h2>
     <p>The App relies on services operated by Google LLC and affiliates, including but not limited to:</p>
     <ul>
       <li><strong>Google Mobile Ads (AdMob)</strong> — advertising. Google’s use of data is described in Google’s advertising policies and privacy documentation.</li>
       <li><strong>Firebase</strong> (for example Analytics, Crashlytics, Performance Monitoring) — product improvement, diagnostics, and related measurement.</li>
+      <li><strong>Cloudflare</strong> (Worker relay) and <strong>GitHub</strong> (Issues) — only for bug reports you submit, as described above.</li>
     </ul>
     <p>These providers act as independent controllers or processors according to their own terms. Please review Google’s privacy policy and, where shown in the App, any in-product consent or preference flows (such as advertising-related choices offered by Google on your device).</p>
 
@@ -150,7 +163,7 @@
     <p>If you are in the European Economic Area, the United Kingdom, or similar regions, we rely on legitimate interests and, where required, your consent (including consent managed through platform or Google UMP flows when presented) to process personal data for analytics, advertising, and app operation—except where another legal basis applies under local law.</p>
 
     <h2>Data retention</h2>
-    <p>Retention of data collected by third-party SDKs is governed by those providers’ policies. The developer does not maintain a separate user database inside the App for account-based profiles.</p>
+    <p>Retention of data collected by third-party SDKs is governed by those providers’ policies. The developer does not maintain a separate user database inside the App for account-based profiles. Bug reports are retained on GitHub for as long as the issue exists, subject to the deletion path above.</p>
 
     <h2>Security</h2>
     <p>We rely on platform security and reputable service providers. No method of transmission over the internet is completely secure; use the App at your own discretion on trusted devices.</p>

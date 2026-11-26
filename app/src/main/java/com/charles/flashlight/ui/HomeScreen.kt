@@ -1,5 +1,6 @@
 package com.charles.flashlight.ui
 
+import android.app.Activity
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.SystemClock
@@ -30,15 +31,19 @@ import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
@@ -68,8 +73,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.charles.flashlight.R
 import com.charles.flashlight.ads.HomeBannerAdSlot
 import com.charles.flashlight.ads.HomeNativeAdSlot
+import com.charles.flashlight.data.BatteryReader
 import com.charles.flashlight.data.SettingsRepository
+import com.charles.flashlight.review.InAppReviewHelper
 import com.charles.flashlight.sensor.ShakeDetector
+import com.charles.flashlight.torch.MorseCode
 import com.charles.flashlight.torch.TorchMode
 import com.charles.flashlight.torch.TorchViewModel
 import kotlinx.coroutines.coroutineScope
@@ -103,16 +111,84 @@ fun HomeScreen(
     val strobeHalfPeriod by settingsRepository.strobeHalfPeriodMs.collectAsStateWithLifecycle(
         initialValue = SettingsRepository.DEFAULT_STROBE_HALF_MS
     )
+    val strobeWarningAck by settingsRepository.strobeWarningAcknowledged.collectAsStateWithLifecycle(
+        initialValue = false
+    )
+    val sessionCount by torchViewModel.successfulSessionCount.collectAsStateWithLifecycle(initialValue = 0)
+    val morseText by torchViewModel.morseText.collectAsStateWithLifecycle()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val view = LocalView.current
     val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var menuExpanded by remember { mutableStateOf(false) }
     var remainingAutoOffMs by remember { mutableLongStateOf(0L) }
+    var showStrobeWarning by remember { mutableStateOf(false) }
+    var pendingWarningAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var batteryInfo by remember { mutableStateOf(BatteryReader.read(context)) }
+
+    // One-shot battery read when the screen appears and when torch state changes.
+    LaunchedEffect(isActive) {
+        batteryInfo = BatteryReader.read(context)
+    }
+
+    // Review prompt only when a session completes during this visit (count
+    // increases to a milestone) — never on load from a persisted count.
+    var lastSeenSessionCount by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(sessionCount, isActive) {
+        val previous = lastSeenSessionCount
+        if (previous == null) {
+            lastSeenSessionCount = sessionCount
+            return@LaunchedEffect
+        }
+        if (sessionCount > previous && !isActive) {
+            val activity = context as? Activity ?: return@LaunchedEffect
+            InAppReviewHelper.requestReviewIfEligible(activity, sessionCount, isActive)
+        }
+        lastSeenSessionCount = sessionCount
+    }
+
+    fun performToggle() {
+        torchViewModel.toggle()
+        if (hapticsEnabled) {
+            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        }
+        if (soundEnabled) {
+            runCatching {
+                ToneGenerator(AudioManager.STREAM_NOTIFICATION, 30)
+                    .startTone(ToneGenerator.TONE_PROP_BEEP, 60)
+            }
+        }
+    }
+
+    fun isFlashingMode(m: TorchMode) = m == TorchMode.STROBE || m == TorchMode.MORSE
+
+    // Flashing modes (strobe, Morse) are gated by a one-time epilepsy warning,
+    // both when starting the torch and when switching mode while it is on.
+    fun requestToggle() {
+        if (!isActive && !strobeWarningAck && isFlashingMode(mode)) {
+            pendingWarningAction = { performToggle() }
+            showStrobeWarning = true
+        } else {
+            performToggle()
+        }
+    }
+
+    fun requestModeChange(newMode: TorchMode) {
+        if (isActive && !strobeWarningAck && isFlashingMode(newMode)) {
+            pendingWarningAction = { torchViewModel.setMode(newMode) }
+            showStrobeWarning = true
+        } else {
+            torchViewModel.setMode(newMode)
+        }
+    }
+
+    // Keep the shake callback on the latest state (mode, warning ack, active).
+    val currentRequestToggle by androidx.compose.runtime.rememberUpdatedState { requestToggle() }
 
     DisposableEffect(shakeEnabled, lifecycleOwner) {
-        val detector = ShakeDetector(context) { torchViewModel.toggle() }
+        val detector = ShakeDetector(context) { currentRequestToggle() }
         detector.setEnabled(shakeEnabled)
         lifecycleOwner.lifecycle.addObserver(detector)
         onDispose {
@@ -152,8 +228,35 @@ fun HomeScreen(
     val modeLabels = listOf(
         TorchMode.STEADY to R.string.mode_steady,
         TorchMode.STROBE to R.string.mode_strobe,
-        TorchMode.SOS to R.string.mode_sos
+        TorchMode.SOS to R.string.mode_sos,
+        TorchMode.MORSE to R.string.mode_morse
     )
+
+    if (showStrobeWarning) {
+        AlertDialog(
+            onDismissRequest = { showStrobeWarning = false },
+            title = { Text(stringResource(R.string.strobe_warning_title)) },
+            text = { Text(stringResource(R.string.strobe_warning_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showStrobeWarning = false
+                    scope.launch { settingsRepository.setStrobeWarningAcknowledged(true) }
+                    pendingWarningAction?.invoke()
+                    pendingWarningAction = null
+                }) {
+                    Text(stringResource(R.string.strobe_warning_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showStrobeWarning = false
+                    pendingWarningAction = null
+                }) {
+                    Text(stringResource(R.string.strobe_warning_cancel))
+                }
+            }
+        )
+    }
 
     Box(
         modifier = modifier
@@ -265,6 +368,31 @@ fun HomeScreen(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.widthIn(max = 320.dp)
                     )
+                    batteryInfo?.let { battery ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                text = stringResource(R.string.battery_level, battery.percent),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
+                        if (battery.percent <= BatteryReader.LOW_BATTERY_PERCENT && !battery.isCharging) {
+                            Text(
+                                text = stringResource(R.string.battery_low_warning),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .padding(top = 6.dp)
+                                    .widthIn(max = 320.dp)
+                            )
+                        }
+                    }
                 }
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -279,7 +407,7 @@ fun HomeScreen(
                             modeLabels.forEachIndexed { index, (torchMode, labelRes) ->
                                 SegmentedButton(
                                     selected = mode == torchMode,
-                                    onClick = { torchViewModel.setMode(torchMode) },
+                                    onClick = { requestModeChange(torchMode) },
                                     shape = SegmentedButtonDefaults.itemShape(
                                         index = index,
                                         count = modeLabels.size
@@ -287,6 +415,44 @@ fun HomeScreen(
                                 ) {
                                     Text(stringResource(labelRes))
                                 }
+                            }
+                        }
+                    }
+
+                    if (mode == TorchMode.MORSE) {
+                        OutlinedTextField(
+                            value = morseText,
+                            onValueChange = { torchViewModel.setMorseText(it) },
+                            label = { Text(stringResource(R.string.morse_input_label)) },
+                            placeholder = { Text(stringResource(R.string.morse_input_hint)) },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                                .testTag("e2e_morse_input")
+                        )
+                    }
+
+                    if (mode == TorchMode.STROBE) {
+                        Row(
+                            modifier = Modifier.padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val presetLabels = listOf(
+                                R.string.strobe_preset_slow,
+                                R.string.strobe_preset_medium,
+                                R.string.strobe_preset_fast
+                            )
+                            SettingsRepository.STROBE_PRESETS_MS.forEachIndexed { index, presetMs ->
+                                FilterChip(
+                                    selected = strobeHalfPeriod == presetMs,
+                                    onClick = {
+                                        scope.launch {
+                                            settingsRepository.setStrobeHalfPeriodMs(presetMs)
+                                        }
+                                    },
+                                    label = { Text(stringResource(presetLabels[index])) }
+                                )
                             }
                         }
                     }
@@ -301,18 +467,7 @@ fun HomeScreen(
                     }
 
                     Surface(
-                        onClick = {
-                            torchViewModel.toggle()
-                            if (hapticsEnabled) {
-                                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                            }
-                            if (soundEnabled) {
-                                runCatching {
-                                    ToneGenerator(AudioManager.STREAM_NOTIFICATION, 30)
-                                        .startTone(ToneGenerator.TONE_PROP_BEEP, 60)
-                                }
-                            }
-                        },
+                        onClick = { requestToggle() },
                         modifier = Modifier
                             .size(248.dp)
                             .shadow(
@@ -366,6 +521,7 @@ fun HomeScreen(
                             strobeHalfPeriod * 2
                         )
                         TorchMode.SOS -> stringResource(R.string.status_mode_sos)
+                        TorchMode.MORSE -> stringResource(R.string.status_mode_morse)
                     }
                     Text(
                         text = if (isActive) {

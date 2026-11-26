@@ -4,8 +4,9 @@
 
 ## What you get
 
-- **Instant torch** — big ring toggles the LED; choose **Steady**, **Strobe**, or **SOS**.
-- **Screen light** — full-screen panel light with brightness and color presets when you do not want the camera LED.
+- **Instant torch** — big ring toggles the LED; choose **Steady**, **Strobe**, **SOS**, or **Morse** (type any text and flash it as Morse code). No camera permission needed — the torch is controlled directly.
+- **Screen light** — full-screen panel light with brightness, color presets, and a gentle colour-cycle mode when you do not want the camera LED.
+- **Battery aware** — battery level on the home screen, with a low-battery warning before torch use.
 - **Settings** — shake-to-toggle, haptics, sound, strobe speed, and auto-off timer.
 - **Overflow menu** — About, website, privacy, and Buy me a coffee (no clutter on the main screen).
 - **Quick Settings tile** — toggle the torch from Android system controls.

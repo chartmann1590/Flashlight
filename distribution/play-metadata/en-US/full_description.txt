@@ -1,21 +1,30 @@
-Flashlight is a fast, simple torch app for Android. Open it when you need light right now, or add the Quick Settings tile and home-screen widget for one-tap access.
+Light, the instant you need it. Flashlight turns on in one tap with a big, clear toggle — and it needs NO camera permission: the torch is controlled directly, and the app never takes photos or video.
+
+Get light even faster with the Quick Settings tile and the home-screen widget, or use Screen Light when a softer panel light is better than the LED.
 
 Core features:
 
 - Instant LED torch with a large, clear toggle
-- Quick Settings tile for faster access from Android system controls
-- Home-screen widget to open or toggle the torch
-- Screen light mode with brightness and warm, neutral, cool, and night-red colors
-- Steady, strobe, and SOS torch modes
+- NO camera permission needed — no photos, no video, ever
+- Morse code transmitter: type any text and flash it as Morse
+- SOS pattern for emergencies
+- Strobe with Slow / Medium / Fast presets and a custom speed slider
+- Quick Settings tile for one-tap access from Android system controls
+- Home-screen widget that shows whether the torch is on or off
+- Screen light with brightness control, warm / neutral / cool / night-red colours, and a gentle colour-cycle mode
+- Battery level on the home screen, with a low-battery warning before torch use
 - Shake-to-toggle option
-- Auto-off timer
+- Auto-off timer so the torch never drains your battery by accident
 - Haptic and sound feedback options
 
 Built for practical use:
 
 - Clean interface that stays readable in the dark
-- Camera permission is used only to control the LED torch
 - No account required
-- Privacy policy included in the app and store listing
+- Privacy policy included in the app and in this listing
 
-Flashlight includes ads to keep the app free. Ads are placed away from the main torch button so the light stays quick to use.
+Safety: Strobe and Morse modes flash the light repeatedly. Flashing lights can trigger seizures in people with photosensitive epilepsy — the app shows a warning before you first use a flashing mode.
+
+Privacy: If you choose to send a bug report from inside the app, the report (your description, and optionally your name, email, device diagnostics, and one screenshot you pick) is posted to the app's public GitHub issue tracker so the problem can be fixed. Nothing is sent unless you submit a report. Full details are in the privacy policy.
+
+Flashlight includes ads to keep the app free. Ads are placed away from the main torch button so the light stays quick to use, and ads only load after your consent choices.

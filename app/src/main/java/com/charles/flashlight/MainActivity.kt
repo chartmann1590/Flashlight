@@ -19,8 +19,14 @@ import com.charles.flashlight.ads.AdIds
 import com.charles.flashlight.ads.ConsentManager
 import com.charles.flashlight.data.SettingsRepository
 import com.charles.flashlight.navigation.FlashlightNavHost
-import com.charles.flashlight.review.InAppReviewHelper
 import com.charles.flashlight.torch.TorchViewModel
+import com.google.android.gms.ads.MobileAds
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.analytics.ktx.logEvent
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.charles.flashlight.ui.ScreenLightActivity
 import com.charles.flashlight.ui.theme.FlashlightTheme
 import kotlin.coroutines.resume
@@ -40,20 +46,25 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val settingsRepo = remember { SettingsRepository(applicationContext) }
 
+                // Consent first, ads second: MobileAds and Analytics start only
+                // after UMP consent and only when canRequestAds() is true.
+                // Runs after the first frame so torch-on is never delayed.
                 LaunchedEffect(Unit) {
                     if (BuildConfig.ADS_ENABLED) {
-                        suspendCoroutine { cont ->
-                            ConsentManager.gatherConsent(this@MainActivity) {
-                                monetizationReady = true
-                                cont.resume(Unit)
+                        val canRequestAds = suspendCoroutine { cont ->
+                            ConsentManager.gatherConsent(this@MainActivity) { allowed ->
+                                cont.resume(allowed)
                             }
                         }
+                        if (canRequestAds) {
+                            withContext(Dispatchers.Default) {
+                                MobileAds.initialize(this@MainActivity) {}
+                            }
+                            Firebase.analytics.setAnalyticsCollectionEnabled(true)
+                            Firebase.analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
+                            monetizationReady = true
+                        }
                     }
-                }
-
-                LaunchedEffect(Unit) {
-                    val count = settingsRepo.incrementLaunchCount()
-                    InAppReviewHelper.requestReviewIfEligible(this@MainActivity, count)
                 }
 
                 LaunchedEffect(Unit) {

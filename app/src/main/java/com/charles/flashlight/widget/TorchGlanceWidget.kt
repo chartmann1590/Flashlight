@@ -21,6 +21,29 @@ class TorchWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = TorchGlanceWidget()
 }
 
+/** Refresh widget instances and the QS tile whenever torch state changes. */
+object TorchWidgetUpdater {
+    suspend fun updateWidgets(context: Context) {
+        runCatching {
+            val manager = androidx.glance.appwidget.GlanceAppWidgetManager(context)
+            val ids = manager.getGlanceIds(TorchGlanceWidget::class.java)
+            ids.forEach { TorchGlanceWidget().update(context, it) }
+        }
+    }
+
+    fun requestTileRefresh(context: Context) {
+        runCatching {
+            android.service.quicksettings.TileService.requestListeningState(
+                context,
+                android.content.ComponentName(
+                    context,
+                    com.charles.flashlight.torch.TorchTileService::class.java
+                )
+            )
+        }
+    }
+}
+
 class TorchGlanceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
@@ -37,6 +60,13 @@ class TorchGlanceWidget : GlanceAppWidget() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(text = context.getString(R.string.widget_title))
+                    com.charles.flashlight.torch.TorchController.initialize(context)
+                    val isOn = com.charles.flashlight.torch.TorchController.isActive.value
+                    Text(
+                        text = context.getString(
+                            if (isOn) R.string.widget_state_on else R.string.widget_state_off
+                        )
+                    )
                     Button(
                         text = context.getString(R.string.widget_toggle),
                         onClick = actionStartActivity(intent)

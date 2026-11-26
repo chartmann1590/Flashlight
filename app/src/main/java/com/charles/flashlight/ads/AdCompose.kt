@@ -100,6 +100,7 @@ private fun bindNativeAd(adView: NativeAdView, nativeAd: NativeAd) {
     val advertiser = adView.findViewById<TextView>(R.id.ad_advertiser)
 
     adView.mediaView = mediaView
+    adView.adChoicesView = adView.findViewById(R.id.ad_choices)
     adView.headlineView = headline
     adView.bodyView = body
     adView.callToActionView = cta
