@@ -205,7 +205,7 @@ private fun ReportProblemDialog(
     var description by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var includeDiagnostics by remember { mutableStateOf(true) }
+    var includeDiagnostics by remember { mutableStateOf(false) }
     var attachmentUri by remember { mutableStateOf<Uri?>(null) }
     var submitting by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }

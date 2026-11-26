@@ -7,7 +7,12 @@ import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 
 object ConsentManager {
-    fun gatherConsent(activity: Activity, onFinished: () -> Unit) {
+    /**
+     * Gather UMP consent, then report whether ads may be requested.
+     * Ad SDKs must only be initialised by the caller when the callback
+     * receives true (consent-before-ads pattern).
+     */
+    fun gatherConsent(activity: Activity, onFinished: (canRequestAds: Boolean) -> Unit) {
         val paramsBuilder = ConsentRequestParameters.Builder()
         if (BuildConfig.DEBUG) {
             paramsBuilder.setConsentDebugSettings(
@@ -23,11 +28,15 @@ object ConsentManager {
             params,
             {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { _ ->
-                    activity.runOnUiThread(onFinished)
+                    activity.runOnUiThread {
+                        onFinished(consentInformation.canRequestAds())
+                    }
                 }
             },
             { _ ->
-                activity.runOnUiThread(onFinished)
+                activity.runOnUiThread {
+                    onFinished(consentInformation.canRequestAds())
+                }
             }
         )
     }
