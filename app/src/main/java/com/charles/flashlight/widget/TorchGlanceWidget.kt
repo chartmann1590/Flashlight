@@ -46,6 +46,11 @@ object TorchWidgetUpdater {
 
 class TorchGlanceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Read torch state here (not inside the composition) so lint's
+        // StateFlowValueCalledInComposition check passes; state changes
+        // trigger a fresh provideGlance via TorchWidgetUpdater.
+        com.charles.flashlight.torch.TorchController.initialize(context)
+        val isOn = com.charles.flashlight.torch.TorchController.isActive.value
         provideContent {
             GlanceTheme {
                 val intent = Intent(context, MainActivity::class.java).apply {
@@ -60,8 +65,6 @@ class TorchGlanceWidget : GlanceAppWidget() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(text = context.getString(R.string.widget_title))
-                    com.charles.flashlight.torch.TorchController.initialize(context)
-                    val isOn = com.charles.flashlight.torch.TorchController.isActive.value
                     Text(
                         text = context.getString(
                             if (isOn) R.string.widget_state_on else R.string.widget_state_off
