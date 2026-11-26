@@ -1,1 +1,1 @@
-Added a Quick Settings torch tile for faster access. Improved ad behavior to keep the flashlight experience cleaner. Updated store listing text for the current feature set.
+Back on Play — and better: new Morse code transmitter (type text, flash it), battery level with a low-battery warning, strobe presets with a photosensitivity warning, and a gentle colour-cycle mode for Screen Light. No camera permission needed anymore. Ads now load only after your consent choices, and the review prompt waits until after you've used the torch.
