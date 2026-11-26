@@ -42,6 +42,10 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
                     settingsRepository.incrementSuccessfulSessionCount()
                 }
                 wasActive = active
+                launch {
+                    com.charles.flashlight.widget.TorchWidgetUpdater.updateWidgets(getApplication())
+                }
+                com.charles.flashlight.widget.TorchWidgetUpdater.requestTileRefresh(getApplication())
             }
         }
         viewModelScope.launch {

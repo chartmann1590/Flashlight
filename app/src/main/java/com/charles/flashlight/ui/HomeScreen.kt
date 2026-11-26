@@ -125,6 +125,7 @@ fun HomeScreen(
     var menuExpanded by remember { mutableStateOf(false) }
     var remainingAutoOffMs by remember { mutableLongStateOf(0L) }
     var showStrobeWarning by remember { mutableStateOf(false) }
+    var pendingWarningAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var batteryInfo by remember { mutableStateOf(BatteryReader.read(context)) }
 
     // One-shot battery read when the screen appears and when torch state changes.
@@ -132,10 +133,20 @@ fun HomeScreen(
         batteryInfo = BatteryReader.read(context)
     }
 
-    // Review prompt only after a completed session, never at launch or while on.
+    // Review prompt only when a session completes during this visit (count
+    // increases to a milestone) — never on load from a persisted count.
+    var lastSeenSessionCount by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(sessionCount, isActive) {
-        val activity = context as? Activity ?: return@LaunchedEffect
-        InAppReviewHelper.requestReviewIfEligible(activity, sessionCount, isActive)
+        val previous = lastSeenSessionCount
+        if (previous == null) {
+            lastSeenSessionCount = sessionCount
+            return@LaunchedEffect
+        }
+        if (sessionCount > previous && !isActive) {
+            val activity = context as? Activity ?: return@LaunchedEffect
+            InAppReviewHelper.requestReviewIfEligible(activity, sessionCount, isActive)
+        }
+        lastSeenSessionCount = sessionCount
     }
 
     fun performToggle() {
@@ -151,19 +162,33 @@ fun HomeScreen(
         }
     }
 
-    // Flashing modes (strobe, Morse) are gated by a one-time epilepsy warning.
+    fun isFlashingMode(m: TorchMode) = m == TorchMode.STROBE || m == TorchMode.MORSE
+
+    // Flashing modes (strobe, Morse) are gated by a one-time epilepsy warning,
+    // both when starting the torch and when switching mode while it is on.
     fun requestToggle() {
-        val needsWarning = !isActive && !strobeWarningAck &&
-            (mode == TorchMode.STROBE || mode == TorchMode.MORSE)
-        if (needsWarning) {
+        if (!isActive && !strobeWarningAck && isFlashingMode(mode)) {
+            pendingWarningAction = { performToggle() }
             showStrobeWarning = true
         } else {
             performToggle()
         }
     }
 
+    fun requestModeChange(newMode: TorchMode) {
+        if (isActive && !strobeWarningAck && isFlashingMode(newMode)) {
+            pendingWarningAction = { torchViewModel.setMode(newMode) }
+            showStrobeWarning = true
+        } else {
+            torchViewModel.setMode(newMode)
+        }
+    }
+
+    // Keep the shake callback on the latest state (mode, warning ack, active).
+    val currentRequestToggle by androidx.compose.runtime.rememberUpdatedState { requestToggle() }
+
     DisposableEffect(shakeEnabled, lifecycleOwner) {
-        val detector = ShakeDetector(context) { requestToggle() }
+        val detector = ShakeDetector(context) { currentRequestToggle() }
         detector.setEnabled(shakeEnabled)
         lifecycleOwner.lifecycle.addObserver(detector)
         onDispose {
@@ -216,13 +241,17 @@ fun HomeScreen(
                 TextButton(onClick = {
                     showStrobeWarning = false
                     scope.launch { settingsRepository.setStrobeWarningAcknowledged(true) }
-                    performToggle()
+                    pendingWarningAction?.invoke()
+                    pendingWarningAction = null
                 }) {
                     Text(stringResource(R.string.strobe_warning_confirm))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showStrobeWarning = false }) {
+                TextButton(onClick = {
+                    showStrobeWarning = false
+                    pendingWarningAction = null
+                }) {
                     Text(stringResource(R.string.strobe_warning_cancel))
                 }
             }
@@ -378,7 +407,7 @@ fun HomeScreen(
                             modeLabels.forEachIndexed { index, (torchMode, labelRes) ->
                                 SegmentedButton(
                                     selected = mode == torchMode,
-                                    onClick = { torchViewModel.setMode(torchMode) },
+                                    onClick = { requestModeChange(torchMode) },
                                     shape = SegmentedButtonDefaults.itemShape(
                                         index = index,
                                         count = modeLabels.size
