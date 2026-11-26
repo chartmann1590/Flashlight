@@ -37,6 +37,13 @@ class TorchGlanceWidget : GlanceAppWidget() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(text = context.getString(R.string.widget_title))
+                    com.charles.flashlight.torch.TorchController.initialize(context)
+                    val isOn = com.charles.flashlight.torch.TorchController.isActive.value
+                    Text(
+                        text = context.getString(
+                            if (isOn) R.string.widget_state_on else R.string.widget_state_off
+                        )
+                    )
                     Button(
                         text = context.getString(R.string.widget_toggle),
                         onClick = actionStartActivity(intent)

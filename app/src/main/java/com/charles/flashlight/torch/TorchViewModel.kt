@@ -25,10 +25,25 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
 
     private val strobeHalfPeriodMs = MutableStateFlow(SettingsRepository.DEFAULT_STROBE_HALF_MS)
 
+    private val _morseText = MutableStateFlow("")
+    val morseText: StateFlow<String> = _morseText.asStateFlow()
+
+    /** Completed torch sessions, used to time the in-app review prompt. */
+    val successfulSessionCount = settingsRepository.successfulSessionCount
+
     private var patternJob: Job? = null
 
     init {
         TorchController.initialize(application)
+        viewModelScope.launch {
+            var wasActive = TorchController.isActive.value
+            TorchController.isActive.collect { active ->
+                if (wasActive && !active) {
+                    settingsRepository.incrementSuccessfulSessionCount()
+                }
+                wasActive = active
+            }
+        }
         viewModelScope.launch {
             settingsRepository.strobeHalfPeriodMs
                 .distinctUntilChanged()
@@ -46,6 +61,10 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
         if (TorchController.isActive.value) {
             restartPattern()
         }
+    }
+
+    fun setMorseText(text: String) {
+        _morseText.value = MorseCode.sanitize(text)
     }
 
     fun toggle() {
@@ -67,6 +86,11 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
                 TorchController.setActive(true)
                 startSos()
             }
+            TorchMode.MORSE -> {
+                if (MorseCode.encode(_morseText.value).isEmpty()) return
+                TorchController.setActive(true)
+                startMorse()
+            }
         }
     }
 
@@ -85,6 +109,7 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
             TorchMode.STEADY -> setSteady(true)
             TorchMode.STROBE -> startStrobe()
             TorchMode.SOS -> startSos()
+            TorchMode.MORSE -> startMorse()
         }
     }
 
@@ -110,6 +135,29 @@ class TorchViewModel(application: Application) : AndroidViewModel(application) {
                 for (i in 0 until 3) dot()
                 delay(WORD_GAP_MS)
             }
+        }
+    }
+
+    /** Transmit the current Morse message once, then turn the torch off. */
+    private fun startMorse() {
+        val symbols = MorseCode.encode(_morseText.value)
+        if (symbols.isEmpty()) {
+            TorchController.setActive(false)
+            return
+        }
+        patternJob = viewModelScope.launch {
+            for (symbol in symbols) {
+                if (!TorchController.isActive.value) return@launch
+                when (symbol) {
+                    '.' -> dot()
+                    '-' -> dash()
+                    ' ' -> delay(LETTER_GAP_MS)
+                    '/' -> delay(WORD_GAP_MS)
+                }
+            }
+            // Message complete: end the session (counts toward review timing).
+            setLight(false)
+            TorchController.setActive(false)
         }
     }
 

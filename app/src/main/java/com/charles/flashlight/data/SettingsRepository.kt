@@ -43,6 +43,16 @@ class SettingsRepository(private val context: Context) {
         prefs[KEY_LAUNCH_COUNT] ?: 0
     }
 
+    /** True once the user has acknowledged the photosensitive-epilepsy warning for flashing modes. */
+    val strobeWarningAcknowledged: Flow<Boolean> = context.settingsDataStore.data.map { prefs ->
+        prefs[KEY_STROBE_WARNING_ACK] ?: false
+    }
+
+    /** Number of completed torch sessions (torch turned on, then off again). Drives review timing. */
+    val successfulSessionCount: Flow<Int> = context.settingsDataStore.data.map { prefs ->
+        prefs[KEY_SESSION_COUNT] ?: 0
+    }
+
     suspend fun setShakeToToggle(value: Boolean) {
         context.settingsDataStore.edit { it[KEY_SHAKE] = value }
     }
@@ -65,6 +75,20 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    suspend fun setStrobeWarningAcknowledged(value: Boolean) {
+        context.settingsDataStore.edit { it[KEY_STROBE_WARNING_ACK] = value }
+    }
+
+    suspend fun incrementSuccessfulSessionCount(): Int {
+        val holder = intArrayOf(0)
+        context.settingsDataStore.edit { prefs ->
+            val cur = prefs[KEY_SESSION_COUNT] ?: 0
+            holder[0] = cur + 1
+            prefs[KEY_SESSION_COUNT] = holder[0]
+        }
+        return holder[0]
+    }
+
     suspend fun incrementLaunchCount(): Int {
         val holder = intArrayOf(0)
         context.settingsDataStore.edit { prefs ->
@@ -82,9 +106,14 @@ class SettingsRepository(private val context: Context) {
         private val KEY_AUTO_OFF_MIN = intPreferencesKey("auto_off_minutes")
         private val KEY_STROBE_HALF_MS = intPreferencesKey("strobe_half_period_ms")
         private val KEY_LAUNCH_COUNT = intPreferencesKey("launch_count")
+        private val KEY_STROBE_WARNING_ACK = booleanPreferencesKey("strobe_warning_acknowledged")
+        private val KEY_SESSION_COUNT = intPreferencesKey("successful_session_count")
 
         const val STROBE_HALF_MIN = 30
         const val STROBE_HALF_MAX = 150
         const val DEFAULT_STROBE_HALF_MS = 70
+
+        /** Named strobe presets (half-period ms). Never faster than [STROBE_HALF_MIN]. */
+        val STROBE_PRESETS_MS: List<Int> = listOf(130, 90, 50)
     }
 }

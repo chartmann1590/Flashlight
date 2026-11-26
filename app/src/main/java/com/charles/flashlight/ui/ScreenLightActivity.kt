@@ -28,7 +28,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -39,7 +42,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import com.charles.flashlight.R
 import com.charles.flashlight.ui.theme.FlashlightTheme
 
@@ -74,8 +80,9 @@ private fun ScreenLightContent(
     activity: ScreenLightActivity,
     onClose: () -> Unit
 ) {
-    var backdrop by remember { mutableStateOf(Color(0xFFFFF8E1)) }
+    var targetColor by remember { mutableStateOf(Color(0xFFFFF8E1)) }
     var brightness by remember { mutableFloatStateOf(1f) }
+    var cycling by remember { mutableStateOf(false) }
 
     val presets = remember {
         listOf(
@@ -84,6 +91,22 @@ private fun ScreenLightContent(
             ScreenLightPreset(R.string.screen_light_color_cool, Color(0xFFE3F2FD)),
             ScreenLightPreset(R.string.screen_light_color_red, Color(0xFF2D0A0A))
         )
+    }
+
+    // Colour cycling: slow cross-fades only (>= 1s steps, 1.2s fades) — never rapid flashing.
+    val backdrop by animateColorAsState(
+        targetValue = targetColor,
+        animationSpec = tween(durationMillis = 1200),
+        label = "screenLightColor"
+    )
+    LaunchedEffect(cycling) {
+        if (!cycling) return@LaunchedEffect
+        var index = presets.indexOfFirst { it.color == targetColor }.coerceAtLeast(0)
+        while (true) {
+            delay(2000)
+            index = (index + 1) % presets.size
+            targetColor = presets[index].color
+        }
     }
 
     SideEffect {
@@ -130,14 +153,19 @@ private fun ScreenLightContent(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = stringResource(R.string.screen_light_brightness),
+                    text = stringResource(
+                        R.string.screen_light_brightness_value,
+                        (brightness * 100).toInt()
+                    ),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                val brightnessDescription = stringResource(R.string.screen_light_brightness)
                 Slider(
                     value = brightness,
                     onValueChange = { brightness = it },
-                    valueRange = 0.12f..1f
+                    valueRange = 0.12f..1f,
+                    modifier = Modifier.semantics { contentDescription = brightnessDescription }
                 )
                 Text(
                     text = stringResource(R.string.screen_light_color_presets),
@@ -152,8 +180,11 @@ private fun ScreenLightContent(
                         ) {
                             row.forEach { preset ->
                                 FilterChip(
-                                    selected = backdrop == preset.color,
-                                    onClick = { backdrop = preset.color },
+                                    selected = !cycling && targetColor == preset.color,
+                                    onClick = {
+                                        cycling = false
+                                        targetColor = preset.color
+                                    },
                                     label = { Text(stringResource(preset.labelRes)) },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -164,6 +195,12 @@ private fun ScreenLightContent(
                         }
                     }
                 }
+                FilterChip(
+                    selected = cycling,
+                    onClick = { cycling = !cycling },
+                    label = { Text(stringResource(R.string.screen_light_cycle)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
