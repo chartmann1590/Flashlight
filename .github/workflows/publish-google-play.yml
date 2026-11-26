@@ -182,5 +182,10 @@ jobs:
           releaseFiles: ${{ steps.artifacts.outputs.aab }}
           tracks: production
           status: completed
+          # Required while the app is in a Removed state: Google rejects the
+          # edit commit with "Changes cannot be sent for review automatically"
+          # unless this is true. The release then lands as unsent changes and
+          # must be sent for review from the Play Console UI.
+          changesNotSentForReview: true
           whatsNewDirectory: distribution/whatsnew
           mappingFile: ${{ steps.artifacts.outputs.mapping_file }}
